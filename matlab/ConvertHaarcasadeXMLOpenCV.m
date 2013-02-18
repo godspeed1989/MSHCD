@@ -22,7 +22,17 @@ c = fread(fid, inf, 'char=>char')';
 fclose(fid);
 c(c==13)=[];
 c(c==10)=[];
-fl = regexp(c, '<', 'split');
+
+if size(ver('Octave'),1)
+    OctaveMode = 1;
+else
+    OctaveMode = 0;
+end
+if OctaveMode
+    fl = strsplit(c,'<'); % Octave command to split delimited string
+else
+    fl = regexp(c,'<','split'); % Matlab command to split delimited string
+end
 
 fid = fopen([filename '.m'], 'w');
 
