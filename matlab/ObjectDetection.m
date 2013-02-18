@@ -81,11 +81,11 @@ if(ischar(Picture))
     Picture = imread(Picture);
 end
 
-% Get the HaarCasade for the object detection
-HaarCasade=GetHaarCasade(FilenameHaarcasade);
-
 % Get the integral images
 IntergralImages= GetIntergralImages(Picture,Options);
+
+% Get the HaarCasade for the object detection
+HaarCasade=GetHaarCasade(FilenameHaarcasade);
 
 Objects = HaarCasadeObjectDetection(IntergralImages,HaarCasade,Options);
 
