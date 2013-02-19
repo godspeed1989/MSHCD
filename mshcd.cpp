@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -24,13 +25,14 @@ typedef struct Stage
 typedef struct HaarCascade
 {
 	int size1, size2;
+	double ScaleUpdate;
 	vector<Stage> stages;
 }HaarCascade;
 static HaarCascade haarcascade;
 
 typedef struct Image
 {
-	unsigned int rows, cols;
+	unsigned int width, height;
 	unsigned char* data;
 	unsigned long* idata;
 }Image;
@@ -38,12 +40,16 @@ static Image image;
 
 void GetHaarCasade(const char* filename);
 void GetIntergralImages(const char* imagefile);
+void HaarCasadeObjectDetection();
 
 void mshcd(const char* imagefile, const char* haarcasadefile)
 {
+	haarcascade.size1 = 20;
+	haarcascade.size2 = 20;
+	haarcascade.ScaleUpdate = 1/1.2;
 	GetHaarCasade(haarcasadefile);
-	//GetIntergralImages(imagefile);
-	//HaarCasadeObjectDetection(image, haarcasade);
+	GetIntergralImages(imagefile);
+	HaarCasadeObjectDetection();
 }
 
 void GetHaarCasade(const char* filename)
@@ -115,7 +121,7 @@ void GetHaarCasade(const char* filename)
 			stage.trees.push_back(tree);
 		}
 		n++;
-		printf("%d  ", trees);
+		assert(stage.trees.size() == trees);
 		fscanf(fin, "%d %lf", &stages, &stage.threshold); // get threshold of stage
 		printf("threshold %lf\n", stage.threshold);
 		haarcascade.stages.push_back(stage);
@@ -132,52 +138,94 @@ void GetIntergralImages(const char* imagefile)
 {
 	FILE *fin;
 	int i, j, m, n;
+	unsigned long size;
 	printf("%s()\n", __FUNCTION__);
 	
 	fin = fopen(imagefile, "rb");
-	fscanf(fin, "%d %d\n", &image.rows, &image.cols);
-	printf("%d X %d\n", image.rows, image.cols);
-	image.data = (unsigned char*)malloc(image.rows*image.cols*1);
-	fread(image.data, image.rows*image.cols, 1, fin);
+	fscanf(fin, "%d %d\n", &image.width, &image.height);
+	printf("%d X %d\n", image.width, image.height);
+	size = image.width*image.height;
+	image.data = (unsigned char*)malloc(size*sizeof(unsigned char));
+	fread(image.data, image.width*image.height, 1, fin);
 	fclose(fin);
 	
-	image.idata = (unsigned long*)malloc(image.rows*image.cols*sizeof(unsigned long));
-	memset(image.idata, 0, image.rows*image.cols*sizeof(unsigned long));
-	for(i=0; i<image.rows; i++)
-		for(j=0; j<image.cols; j++)
+	image.idata = (unsigned long*)malloc(size*sizeof(unsigned long));
+	memset(image.idata, 0, size*sizeof(unsigned long));
+	for(i=0; i<image.width; i++)
+		for(j=0; j<image.height; j++)
 		{
-			for(m=0; m<i; m++)
+			/*for(m=0; m<i; m++)
 				for(n=0; n<j; n++)
 				{
-					*(image.idata+i*image.rows+j) += \
-					*(image.data+m*image.rows+n);
-				}
+					*(image.idata+i*image.width+j) += \
+					*(image.data+m*image.width+n);
+				}*/
+			m = i, n = j;
+			*(image.idata+i*image.width+j) = \
+					*(image.data+m*image.width+n);
 		}
-	/*resize(image);
-	convert_gray(imagefile);
-	make integral image;*/
 }
-/*
-HaarCasadeObjectDetection(image, haarcasade)
+
+void HaarCasadeObjectDetection()
 {
-	get coarsest image scale
-	for(i...itt)
+	int Scale, StartScale, ScaleWidth, ScaleHeight;
+	long i, itt;
+	printf("%s()\n", __FUNCTION__);
+	ScaleWidth = image.width/haarcascade.size1;
+	ScaleHeight = image.height/haarcascade.size2;
+	if(ScaleHeight < ScaleWidth)
+		StartScale =  ScaleHeight; 
+	else
+		StartScale = ScaleWidth;
+	printf("StartScale = %d\n", StartScale);
+	itt = ceil(log(1.0/StartScale)/log(haarcascade.ScaleUpdate));
+	printf("itt = %lf / %lf = %ld\n", \
+			log(1.0/StartScale), log(haarcascade.ScaleUpdate), itt);
+	for(i=0; i<itt; i++)
 	{
-		OneScaleObjectDetection();
+		unsigned int w, h, step;
+		Scale = StartScale*pow(haarcascade.ScaleUpdate,(i-1));
+		step = (Scale>2)?Scale:2;
+		printf("itt %ld scale %d step %d\n", i+1, Scale, step);
+		w = floor(haarcascade.size1*Scale);
+		h = floor(haarcascade.size2*Scale);
+		// Make vectors with all search image coordinates 
+		/*[x,y]=ndgrid(0:step:
+		(IntegralImages.width-w-1),0:
+		step:
+		(IntegralImages.height-h-1));
+		x=x(:); y=y(:);
+		*/
+		//OneScaleObjectDetection(x, y, Scale, w, h)
 	}
 }
 
-OneScaleObjectDetection()
+unsigned long GetSumRect(unsigned int x, unsigned int y,
+                         unsigned int w, unsigned int h)
 {
-	//loop through all claasifer stages
-	for(i_stage...stages)
+	return	*( image.idata+(x+w)*image.width+(y+h) )
+		-	*( image.idata+(x+0)*image.width+(y+h) )
+		-	*( image.idata+(x+w)*image.width+(y+0) )
+		+	*( image.idata+(x+0)*image.width+(y+0) );
+}
+/*
+OneScaleObjectDetection(x, y, Scale, w, h)
+{
+	int i_stage, i_tree;
+	double InverseArea;
+	InverseArea = 1 / (w*h);
+	mean = GetSumRect*InverseArea;
+	Variance = GetSumRect(IntegralImages.ii2,x,y,w,h)*InverseArea - (mean.^2);
+
+	for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
 	{
-		// loop through a classifier tree
-		for(i_tree...trees)
+		long StageSum = 0;
+		for(i_tree=0; i_tree<c.trees.size(); i_tree++)
 		{
-			TreeSum = TreeObjectDetection();
+			TreeSum = TreeObjectDection();
 			StageSum += TreeSum;
 		}
+		check = StageSum < haarcascade.stages[i].threshold;
 	}
 }
 
@@ -190,15 +238,6 @@ TreeObjectDetection()
 		Rectangle_sum += r_sum;
 	}
 	Tree_sum = TreeObjectDetection
-}
-
-GetSumRect()
-{
-	IIWidth=size(IntegralImage,1);
-	PixSum  = IntegralImage((x+Width)*IIWidth + y + Height+1) \
-			+ IntegralImage(x*IIWidth+y+1) \
-			- IntegralImage((x+Width)*IIWidth+y+1) \
-			- IntegralImage(x*IIWidth+y+Height+1);
 }
 */
 
