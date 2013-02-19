@@ -39,7 +39,7 @@ void GetHaarCasade(const char* filename)
 	fin = fopen(filename, "r");
 	assert(fin);
 	fscanf(fin, "%d", &n_stages);
-	printf("%d stages\n", n_stages);
+	printf("Total %d stages\n", n_stages);
 	n = 1;
 	while(!feof(fin) && n <= n_stages)
 	{
@@ -69,9 +69,9 @@ void GetHaarCasade(const char* filename)
 						break;
 					case 5: fscanf(fin, "%lf", &tree.right_val);
 						break;
-				}
-				stage.trees.push_back(tree);
+				}	
 			}
+			stage.trees.push_back(tree);
 		}
 		fscanf(fin, "%d %lf", &stages, &stage.threshold); // get threshold of stage
 		printf("threshold %lf\n", stage.threshold);
