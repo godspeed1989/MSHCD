@@ -1,14 +1,82 @@
+#include <stdio.h>
+#include <assert.h>
+#include <vector>
+using namespace std;
 
-void mshcd(imagefile, haarcasadefile)
+typedef struct Tree
+{
+	int rect1[5], rect2[5];
+	int tilted;
+	double threshold;
+	double left_val, right_val;
+}Tree;
+
+typedef struct Stage
+{
+	double threshold;
+	vector<Tree> trees;
+}Stage;
+
+static Tree tree;
+static Stage stage;
+static vector<Stage> HaarCascade;
+
+void GetHaarCasade(const char* filename);
+
+void mshcd(const char* imagefile, const char* haarcasadefile)
 {
 	GetHaarCasade(haarcasadefile);
-	GetIntergralImages(imagefile);
-	HaarCasadeObjectDetection(image, haarcasade);
+	//GetIntergralImages(imagefile);
+	//HaarCasadeObjectDetection(image, haarcasade);
 }
 
-GetHaarCasade(filename)
+void GetHaarCasade(const char* filename)
 {
-	stages = ;
+	FILE *fin;
+	int i, j, n, n_stages, n_trees;
+	int stages, trees, value;
+	printf("%s()\n", __FUNCTION__);
+	fin = fopen(filename, "r");
+	assert(fin);
+	fscanf(fin, "%d", &n_stages);
+	printf("%d stages\n", n_stages);
+	n = 1;
+	while(!feof(fin) && n <= n_stages)
+	{
+		fscanf(fin, "%d", &n_trees); // num of trees per stage
+		printf("Stage %d num_tree %d ", n++, n_trees);
+		trees = 1;
+		while(trees < n_trees && !feof(fin))  // get each tree
+		{
+			for(i=0; i<6; i++)
+			{
+				fscanf(fin, "%d%d%d", &stages, &trees, &value);
+				switch(i)
+				{
+					case 0:
+						fscanf(fin, "%d", &value);
+						for(j=0; j<5; j++) fscanf(fin, "%d", &tree.rect1[j]);
+						break;
+					case 1:
+						fscanf(fin, "%d", &value);
+						for(j=0; j<5; j++) fscanf(fin, "%d", &tree.rect2[j]);
+						break;
+					case 2: fscanf(fin, "%d", &tree.tilted);
+						break;
+					case 3: fscanf(fin, "%lf", &tree.threshold);
+						break;
+					case 4: fscanf(fin, "%lf", &tree.left_val);
+						break;
+					case 5: fscanf(fin, "%lf", &tree.right_val);
+						break;
+				}
+				stage.trees.push_back(tree);
+			}
+		}
+		fscanf(fin, "%d %lf", &stages, &stage.threshold); // get threshold of stage
+		printf("threshold %lf\n", stage.threshold);
+	}
+	/*stages = ;
 	for(i...stages)
 	{
 		stages2 = 
@@ -23,9 +91,9 @@ GetHaarCasade(filename)
 				a.tilted}
 			}
 		}
-	}
+	}*/
 }
-
+/*
 GetIntergralImages(imagefile)
 {
 	resize(image);
@@ -74,5 +142,12 @@ GetSumRect()
 			+ IntegralImage(x*IIWidth+y+1) \
 			- IntegralImage((x+Width)*IIWidth+y+1) \
 			- IntegralImage(x*IIWidth+y+Height+1);
+}
+*/
+
+int main()
+{
+	mshcd("", "haar.txt");
+	return 0;
 }
 
