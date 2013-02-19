@@ -4,5 +4,5 @@ TARGET=mshcd
 all: $(TARGET)
 
 $(TARGET): $(TARGET).cpp
-	$(CC) -o $@ $<
+	$(CC) -g -o $@ $<
 
