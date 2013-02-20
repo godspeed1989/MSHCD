@@ -6,3 +6,6 @@ all: $(TARGET)
 $(TARGET): $(TARGET).cpp
 	$(CC) -g -o $@ $<
 
+clean:
+	rm -rf $(TARGET)
+

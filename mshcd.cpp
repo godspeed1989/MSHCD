@@ -1,41 +1,6 @@
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <vector>
-using namespace std;
+#include "mshcd.hpp"
 
-typedef struct Rect{
-	int r[5];
-}Rect;
-typedef struct Tree
-{
-	vector<Rect> rects;
-	int rect2[5];
-	int tilted;
-	double threshold;
-	double left_val, right_val;
-}Tree;
-typedef struct Stage
-{
-	double threshold;
-	vector<Tree> trees;
-}Stage;
-typedef struct HaarCascade
-{
-	int size1, size2;
-	double ScaleUpdate;
-	vector<Stage> stages;
-}HaarCascade;
 static HaarCascade haarcascade;
-
-typedef struct Image
-{
-	unsigned int width, height;
-	unsigned char* data;
-	unsigned long* idata;
-}Image;
 static Image image;
 
 void GetHaarCasade(const char* filename);
@@ -85,19 +50,23 @@ void GetHaarCasade(const char* filename)
 					Rect rect;
 					fscanf(fin, "%d", &value);
 					for(j=0; j<5; j++) fscanf(fin, "%d", &rect.r[j]);
-					tree.rects.push_back(rect);
+					tree.rects[i] = rect;
 				}
 				else if(i == 2)
 				{
+					Rect rect;
 					fscanf(fin, "%d", &value);
 					if(value == 0)
+					{
 						tree.tilted = 0;
+						for(j=0; j<5; j++) rect.r[j] = 0;
+						tree.rects[i] = rect;
+					}
 					else if(value == 3) // exist 3rd rect
 					{
 						flag = 1;
-						Rect rect;
 						for(j=0; j<5; j++) fscanf(fin, "%d", &rect.r[j]);
-						tree.rects.push_back(rect);
+						tree.rects[i] = rect;
 					}
 					else
 						assert(0);
@@ -149,27 +118,33 @@ void GetIntergralImages(const char* imagefile)
 	fread(image.data, image.width*image.height, 1, fin);
 	fclose(fin);
 	
-	image.idata = (unsigned long*)malloc(size*sizeof(unsigned long));
-	memset(image.idata, 0, size*sizeof(unsigned long));
+	image.idata1 = (unsigned long*)malloc(size*sizeof(unsigned long));
+	memset(image.idata1, 0, size*sizeof(unsigned long));
+	image.idata2 = (unsigned long*)malloc(size*sizeof(unsigned long));
+	memset(image.idata2, 0, size*sizeof(unsigned long));
 	for(i=0; i<image.width; i++)
 		for(j=0; j<image.height; j++)
 		{
 			/*for(m=0; m<i; m++)
 				for(n=0; n<j; n++)
 				{
-					*(image.idata+i*image.width+j) += \
+					*(image.idata1+i*image.width+j) += \
 					*(image.data+m*image.width+n);
+					*(image.idata2+i*image.width+j) += \
+					pow(*(image.data+m*image.width+n), 2);
 				}*/
 			m = i, n = j;
-			*(image.idata+i*image.width+j) = \
+			*(image.idata1+i*image.width+j) = \
 					*(image.data+m*image.width+n);
+			*(image.idata2+i*image.width+j) = \
+					pow(*(image.data+m*image.width+n), 2);
 		}
 }
 
 void HaarCasadeObjectDetection()
 {
 	int Scale, StartScale, ScaleWidth, ScaleHeight;
-	long i, itt;
+	long i, itt, x, y;
 	printf("%s()\n", __FUNCTION__);
 	ScaleWidth = image.width/haarcascade.size1;
 	ScaleHeight = image.height/haarcascade.size2;
@@ -190,54 +165,88 @@ void HaarCasadeObjectDetection()
 		w = floor(haarcascade.size1*Scale);
 		h = floor(haarcascade.size2*Scale);
 		// Make vectors with all search image coordinates 
-		/*[x,y]=ndgrid(0:step:
-		(IntegralImages.width-w-1),0:
-		step:
-		(IntegralImages.height-h-1));
-		x=x(:); y=y(:);
-		*/
-		//OneScaleObjectDetection(x, y, Scale, w, h)
+		Point point;
+		vector<Point> points;
+		for(x=0; x<image.width; x+=step)
+		{
+			for(y=0; y<image.height; y+=step)
+			{
+				point.x = x, point.y = y;
+				points.push_back(point);
+			}
+		}
+		/*vector<Point> points =ndgrid(
+				0:step:(IntegralImages.width-w-1),
+				0:step:(IntegralImages.height-h-1)
+			);*/
+		
+		//OneScaleObjectDetection(points, Scale, w, h)
 	}
 }
 
-unsigned long GetSumRect(unsigned int x, unsigned int y,
+unsigned long GetSumRect(int type,
+                         unsigned int x, unsigned int y,
                          unsigned int w, unsigned int h)
 {
-	return	*( image.idata+(x+w)*image.width+(y+h) )
-		-	*( image.idata+(x+0)*image.width+(y+h) )
-		-	*( image.idata+(x+w)*image.width+(y+0) )
-		+	*( image.idata+(x+0)*image.width+(y+0) );
+	if(type == II1)
+		return	*( image.idata1+(x+w)*image.width+(y+h) )
+			-	*( image.idata1+(x+0)*image.width+(y+h) )
+			-	*( image.idata1+(x+w)*image.width+(y+0) )
+			+	*( image.idata1+(x+0)*image.width+(y+0) );
+	if(type == II2)
+		return	*( image.idata2+(x+w)*image.width+(y+h) )
+			-	*( image.idata2+(x+0)*image.width+(y+h) )
+			-	*( image.idata2+(x+w)*image.width+(y+0) )
+			+	*( image.idata2+(x+0)*image.width+(y+0) );
+	assert(0);
+	return 0;
 }
 /*
-OneScaleObjectDetection(x, y, Scale, w, h)
+OneScaleObjectDetection(vector<Point> points, Scale, w, h)
 {
 	int i_stage, i_tree;
 	double InverseArea;
 	InverseArea = 1 / (w*h);
-	mean = GetSumRect*InverseArea;
-	Variance = GetSumRect(IntegralImages.ii2,x,y,w,h)*InverseArea - (mean.^2);
+	
+	mean = GetSumRect(II1,x,y,w,h)*InverseArea;
+	Variance = GetSumRect(II2,x,y,w,h)*InverseArea - (mean.^2);
 
 	for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
 	{
+		Stage &stage = haarcascade.stages[i_stage];
 		long StageSum = 0;
-		for(i_tree=0; i_tree<c.trees.size(); i_tree++)
+		for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
 		{
-			TreeSum = TreeObjectDection();
+			Tree &tree = stage.trees[i];
+			TreeSum = TreeObjectDection(tree, Scale, points,\
+				StandardDeviation, InverseArea);
 			StageSum += TreeSum;
 		}
-		check = StageSum < haarcascade.stages[i].threshold;
+		check = StageSum < stage.threshold;
+		
 	}
 }
 
-TreeObjectDetection()
+TreeObjectDetection(Tree& tree, Scale, vector<Point> points, StandardDeviation, InverseArea)
 {
 	//Calculate the haar-feature response
-	for(i_rectangle=1..3)
+	int i_rect;
+	Rectangle_sum = zeros(size(x));
+	for(i_rect=0; i_rect<3; i_rect++)
 	{
-		r_sum = GetSumRect();
+		unsigned long r_sum = 0;
+		Rect &rect = tree.rects[i_rect];
+		r_sum = GetSumRect(II1, rect.r[0], rect.r[1],
+								rect.r[2], rect.r[3])*rect.r[4];
 		Rectangle_sum += r_sum;
 	}
-	Tree_sum = TreeObjectDetection
+	Rectangle_sum *= InverseArea;
+	Tree_sum = TreeObjectDetection;
+	check = Rectangle_sum >= LeafTreshold(:).*StandardDeviation;
+	Node(check) = RightNode(check);
+	Node(~check) = LeftNode(~check);
+	Tree_sum(check) = RightValue(check);
+	Tree_sum(~check) = LeftValue(~check);
 }
 */
 
