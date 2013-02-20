@@ -46,5 +46,6 @@ typedef struct Point
 {
 	unsigned int x, y;
 }Point;
+
 #endif
 
