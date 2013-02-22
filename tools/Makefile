@@ -1,7 +1,7 @@
 CC=g++
 TARGET=raw
 LIBS=`pkg-config opencv --libs`
-CPPFLAGS=`pkg-config opencv --cflags`
+CPPFLAGS=`pkg-config opencv --cflags` -g
 
 
 all: $(TARGET)

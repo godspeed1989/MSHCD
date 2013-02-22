@@ -1,10 +1,11 @@
 CC=g++
 TARGET=mshcd
+CFLAGS=-g -Wall
 
 all: $(TARGET)
 
 $(TARGET): $(TARGET).cpp
-	$(CC) -g -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $<
 
 clean:
 	rm -rf $(TARGET)

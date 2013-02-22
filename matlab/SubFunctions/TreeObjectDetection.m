@@ -36,7 +36,7 @@ Node(~check)=LeftNode(~check);
 Tree_sum(check)=RightValue(check);
 Tree_sum(~check)=LeftValue(~check);
 
-% If a Node has a larger value then -1, it is not the end node with
+% If a Node has a larger value than -1, it is not the end node with
 % a value, but it is connected to another weak-classifier
 check=Node>-1;
 if(any(check))

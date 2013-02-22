@@ -11,7 +11,9 @@ using namespace std;
 
 typedef struct Rect
 {
-	int r[5]; // x, y, width, height, weight
+	unsigned int x, y;
+	unsigned int width, height;
+	int weight;
 }Rect;
 typedef struct Tree
 {
@@ -27,7 +29,7 @@ typedef struct Stage
 }Stage;
 typedef struct HaarCascade
 {
-	int size1, size2;
+	unsigned int size1, size2;
 	double ScaleUpdate;
 	vector<Stage> stages;
 }HaarCascade;
