@@ -24,7 +24,8 @@ void GetHaarCasade(const char* filename)
 	FILE *fin;
 	int i, j, t, n, n_stages, n_trees;
 	int stages, trees, value, flag;
-	printf("%s()\n", __FUNCTION__);
+	unsigned long total_features;
+	PRINT_FUNCTION_INFO();
 	fin = fopen(filename, "r");
 	assert(fin);
 	fscanf(fin, "%d", &n_stages);
@@ -97,12 +98,14 @@ void GetHaarCasade(const char* filename)
 		printf("threshold %lf\n", stage.threshold);
 		haarcascade.stages.push_back(stage);
 	}
-	
+	total_features = 0;
 	for(i=0; i<haarcascade.stages.size(); i++)
 	{
 		printf("%d\t", i+1);
 		printf("%d\n", haarcascade.stages[i].trees.size());
+		total_features += haarcascade.stages[i].trees.size();
 	}
+	printf("Total features %ld\n", total_features);
 }
 
 void GetIntergralImages(const char* imagefile)
@@ -110,7 +113,7 @@ void GetIntergralImages(const char* imagefile)
 	FILE *fin;
 	int i, j, m, n;
 	unsigned long size;
-	printf("%s()\n", __FUNCTION__);
+	PRINT_FUNCTION_INFO();
 	
 	fin = fopen(imagefile, "rb");
 	fscanf(fin, "%d %d\n", &image.width, &image.height);
@@ -150,7 +153,7 @@ void HaarCasadeObjectDetection()
 {
 	double Scale, StartScale, ScaleWidth, ScaleHeight;
 	long i, itt, x, y;
-	printf("%s()\n", __FUNCTION__);
+	PRINT_FUNCTION_INFO();
 	ScaleWidth = image.width/haarcascade.size1;
 	ScaleHeight = image.height/haarcascade.size2;
 	if(ScaleHeight < ScaleWidth)

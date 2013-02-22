@@ -47,5 +47,8 @@ typedef struct Point
 	unsigned int x, y;
 }Point;
 
+#define PRINT_FUNCTION_INFO() \
+        printf("------%s()\n", __FUNCTION__)
+
 #endif
 
