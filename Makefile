@@ -1,6 +1,7 @@
 CC=g++
 TARGET=mshcd
-CFLAGS=-g -Wall
+CFLAGS = -Wall
+#CFLAGS+= -g -DDEBUG
 
 all: $(TARGET)
 
