@@ -10,15 +10,14 @@ void HaarCasadeObjectDetection();
 void OneScaleObjectDetection(vector<Point> points, double Scale,
                              unsigned int w, unsigned int h);
 double TreeObjectDetection(Tree& tree, double Scale, Point& point,
-                           vector<double>& StandardDeviation, 
-                           double InverseArea);
+                           double StandardDeviation, double InverseArea);
 void ShowDetectionResult();
 
 void mshcd(const char* imagefile, const char* haarcasadefile)
 {
 	haarcascade.size1 = 20;
 	haarcascade.size2 = 20;
-	haarcascade.ScaleUpdate = 1/1.2;
+	haarcascade.ScaleUpdate = 1.0/1.2;
 	GetHaarCascade(haarcasadefile); // get classifer from file
 	GetIntergralImages(imagefile);  // calculate intergral image
 	HaarCasadeObjectDetection();    // start detection
@@ -152,19 +151,18 @@ void GetIntergralImages(const char* imagefile)
 	for(i=0; i<image.width; i++)
 		for(j=0; j<image.height; j++)
 		{
-			/*for(m=0; m<i; m++)
+			for(m=0; m<i; m++)
 				for(n=0; n<j; n++)
 				{
-					*(image.idata1+i*image.width+j) += \
-						*(image.data+m*image.width+n);
-					*(image.idata2+i*image.width+j) += \
-						pow(*(image.data+m*image.width+n), 2);
-				}*/
-			m = i, n = j;
+					unsigned char *d = image.data+m*image.width+n;
+					*(image.idata1+i*image.width+j) += *d;
+					*(image.idata2+i*image.width+j) += pow(*d, 2);
+				}
+			/*m = i, n = j;
 			*(image.idata1+i*image.width+j) = \
 					*(image.data+m*image.width+n);
 			*(image.idata2+i*image.width+j) = \
-					pow(*(image.data+m*image.width+n), 2);
+					pow(*(image.data+m*image.width+n), 2);*/
 		}
 	PRINT_FUNCTION_END_INFO();
 }
@@ -251,7 +249,7 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 	vector<double> StandardDeviation;
 	double InverseArea;
 	PRINT_FUNCTION_INFO();
-	InverseArea = 1 / (width*height);
+	InverseArea = 1.0 / (width*height);
 	// calculate the mean and gray-level varianceiance 
 	// of every search window
 	printf("Total %d rects to find\n", points.size());
@@ -288,12 +286,12 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 				double TreeSum;
 				DPRINTF("----Tree %d----\n", i_tree);
 				TreeSum = TreeObjectDetection(tree, Scale,
-					points[i], StandardDeviation, InverseArea);
+					points[i], StandardDeviation[i], InverseArea);
 				StageSum += TreeSum;
 			}
 			// If the StageSum of a coordinate is lower than
 			// the treshold it is removed, otherwise it goes into the next stage
-			if(StageSum < stage.threshold)
+			if(StageSum > stage.threshold)
 			{
 				break; // to the next point
 			}
@@ -302,6 +300,7 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 				continue; // to the next stage
 			}
 		}
+		printf("pass %d of %d stages\n", i_stage, haarcascade.stages.size());
 		// pass all the stages
 		if(i_stage == haarcascade.stages.size())
 		{
@@ -321,31 +320,32 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
  * get the current haar-classifier's value (left/right)
  */
 double TreeObjectDetection(Tree& tree, double Scale, Point& point,
-                           vector<double>& StandardDeviation, 
-                           double InverseArea)
+                           double StandardDeviation, double InverseArea)
 {
 	//Calculate the haar-feature response
-	unsigned int i, i_rect, check;
+	unsigned int i_rect, check;
 	double Rectangle_sum, tree_threshold;
 	//PRINT_FUNCTION_INFO();
-	Rectangle_sum = tree_threshold = 0.0;
+	Rectangle_sum = 0.0;
 	for(i_rect=0; i_rect<3; i_rect++)
 	{
-		unsigned long r_sum = 0;
+		long r_sum = 0;
 		Rect &rect = tree.rects[i_rect];
 		DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
 		unsigned int RectX = rect.x * Scale + point.x;
 		unsigned int RectY = rect.y * Scale + point.y;
 		unsigned int RectWidth = rect.width * Scale;
 		unsigned int RectHeight = rect.height * Scale;
-		r_sum = GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) \
-					* rect.weight;
+		r_sum = (long)GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) \
+						* rect.weight;
 		Rectangle_sum += r_sum;
 	}
 	Rectangle_sum *= InverseArea;
-	for(i=0; i<StandardDeviation.size(); i++)
-		tree_threshold += tree.threshold*StandardDeviation[i];
-	check = (Rectangle_sum >= tree_threshold * 1.1);
+	tree_threshold = tree.threshold * StandardDeviation;
+	//for(i=0; i<StandardDeviation.size(); i++)
+	//	tree_threshold += tree.threshold*StandardDeviation[i];
+	//printf("%lf - %lf(%lf)\n", Rectangle_sum, tree.threshold, tree_threshold);
+	check = (Rectangle_sum >= tree_threshold);
 	/*
 	Leaf= Tree(Node+1,:);
 	LeafTreshold=Leaf(:,1);
@@ -365,11 +365,13 @@ void ShowDetectionResult()
 {
 	unsigned int i_obj;
 	PRINT_FUNCTION_INFO();
+	printf("Total %d object(s) found\n", objects.size());
 	for(i_obj=0; i_obj<objects.size(); i_obj++)
 	{
 		Rect &rect = objects[i_obj];
-		printf("(%d, %d) %d %d\n", rect.x, rect.y, rect.width, rect.height);
+		//printf("(%d, %d) %d %d\n", rect.x, rect.y, rect.width, rect.height);
 	}
+	PRINT_FUNCTION_END_INFO();
 }
 
 int main()
@@ -377,3 +379,4 @@ int main()
 	mshcd("./tools/gray_img.raw", "haar.txt");
 	return 0;
 }
+
