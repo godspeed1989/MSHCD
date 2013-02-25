@@ -363,14 +363,17 @@ double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 
 void ShowDetectionResult()
 {
+	FILE *fout;
 	unsigned int i_obj;
 	PRINT_FUNCTION_INFO();
 	printf("Total %d object(s) found\n", objects.size());
+	fout = fopen("result.txt", "w");
 	for(i_obj=0; i_obj<objects.size(); i_obj++)
 	{
 		Rect &rect = objects[i_obj];
-		//printf("(%d, %d) %d %d\n", rect.x, rect.y, rect.width, rect.height);
+		fprintf(fout, "%d %d %d %d\n", rect.x, rect.y, rect.width, rect.height);
 	}
+	fclose(fout);
 	PRINT_FUNCTION_END_INFO();
 }
 

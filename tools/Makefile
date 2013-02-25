@@ -1,13 +1,18 @@
 CC=g++
-TARGET=raw
+TARGET1=raw
+TARGET2=draw
 LIBS=`pkg-config opencv --libs`
 CPPFLAGS=`pkg-config opencv --cflags` -g
 
 
-all: $(TARGET)
+all: $(TARGET1) $(TARGET2)
 
-$(TARGET): $(TARGET).cpp
-	$(CC) $(CPPFLAGS) -o $@ $< $(LIBS) 
+$(TARGET1): $(TARGET1).cpp
+	$(CC) $(CPPFLAGS) -o $@ $< $(LIBS)
+
+$(TARGET2): $(TARGET2).cpp
+	$(CC) $(CPPFLAGS) -o $@ $< $(LIBS)
 
 clean:
-	rm -rf gray_img.raw $(TARGET)
+	rm -rf gray_img.raw $(TARGET1) $(TARGET2)
+
