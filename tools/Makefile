@@ -14,5 +14,5 @@ $(TARGET2): $(TARGET2).cpp
 	$(CC) $(CPPFLAGS) -o $@ $< $(LIBS)
 
 clean:
-	rm -rf gray_img.raw $(TARGET1) $(TARGET2)
+	rm -rf $(TARGET1) $(TARGET2)
 
