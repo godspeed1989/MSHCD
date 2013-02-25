@@ -218,6 +218,7 @@ void HaarCasadeObjectDetection()
 			}
 		}
 		OneScaleObjectDetection(points, Scale, width, height);
+		printf("Already found %d object(s)\n", objects.size());
 	}
 	PRINT_FUNCTION_END_INFO();
 }
@@ -232,15 +233,15 @@ unsigned long GetSumRect(int type,
 	DPRINTF("(%d %d) %d %d\n", x, y, w, h);
 	assert(x+w<image.width && y+h<image.height);
 	if(type == II1)
-		return	*( image.idata1+(x+w)*image.width+(y+h) )
-			-	*( image.idata1+(x+0)*image.width+(y+h) )
-			-	*( image.idata1+(x+w)*image.width+(y+0) )
-			+	*( image.idata1+(x+0)*image.width+(y+0) );
+		return	*( image.idata1+(y+h)*image.width+(x+w) )
+			-	*( image.idata1+(y+0)*image.width+(x+w) )
+			-	*( image.idata1+(y+h)*image.width+(x+0) )
+			+	*( image.idata1+(y+0)*image.width+(x+0) );
 	if(type == II2)
-		return	*( image.idata2+(x+w)*image.width+(y+h) )
-			-	*( image.idata2+(x+0)*image.width+(y+h) )
-			-	*( image.idata2+(x+w)*image.width+(y+0) )
-			+	*( image.idata2+(x+0)*image.width+(y+0) );
+		return	*( image.idata2+(y+h)*image.width+(x+w) )
+			-	*( image.idata2+(y+0)*image.width+(x+w) )
+			-	*( image.idata2+(y+h)*image.width+(x+0) )
+			+	*( image.idata2+(y+0)*image.width+(x+0) );
 	assert(0);
 	return 0;
 }
@@ -349,11 +350,15 @@ double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 		Rectangle_sum += r_sum;
 	}
 	Rectangle_sum *= InverseArea;
-	tree_threshold = tree.threshold * StandardDeviation;
+	tree_threshold = Rectangle_sum - tree.threshold;
+	if(tree_threshold < 0.0)
+		tree_threshold *= (-1.0);
+	if(StandardDeviation < 0.0)
+		StandardDeviation *= (-1.0);
 	//for(i=0; i<StandardDeviation.size(); i++)
 	//	tree_threshold += tree.threshold*StandardDeviation[i];
 	//printf("%lf - %lf(%lf)\n", Rectangle_sum, tree.threshold, tree_threshold);
-	check = (Rectangle_sum >= tree_threshold);
+	check = (StandardDeviation >= tree_threshold);
 	/*
 	Leaf= Tree(Node+1,:);
 	LeafTreshold=Leaf(:,1);
