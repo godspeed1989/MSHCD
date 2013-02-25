@@ -131,7 +131,7 @@ void GetHaarCascade(const char* filename)
 void GetIntergralImages(const char* imagefile)
 {
 	FILE *fin;
-	unsigned int i, j, m, n;
+	unsigned int i, j, n;
 	unsigned long size;
 	PRINT_FUNCTION_INFO();
 	
@@ -148,16 +148,24 @@ void GetIntergralImages(const char* imagefile)
 	memset(image.idata1, 0, size*sizeof(unsigned long));
 	image.idata2 = (unsigned long*)malloc(size*sizeof(unsigned long));
 	memset(image.idata2, 0, size*sizeof(unsigned long));
-	for(i=0; i<image.width; i++)
-		for(j=0; j<image.height; j++)
+	for(i=0; i<image.height; i++)
+		for(j=0; j<image.width; j++)
 		{
-			for(m=0; m<i; m++)
-				for(n=0; n<j; n++)
-				{
-					unsigned char *d = image.data+m*image.width+n;
-					*(image.idata1+i*image.width+j) += *d;
-					*(image.idata2+i*image.width+j) += pow(*d, 2);
-				}
+			if(i>0)
+			{
+				unsigned long *d;
+				d = image.idata1 + (i-1)*image.width + j;
+				*(image.idata1+i*image.width+j) += *d;
+				d = image.idata2 + (i-1)*image.width + j;
+				*(image.idata2+i*image.width+j) += *d;
+			}
+			for(n=0; n<=j; n++)
+			{
+				unsigned char *d;
+				d = image.data + i*image.width + n;
+				*(image.idata1+i*image.width+j) += *d;
+				*(image.idata2+i*image.width+j) += pow(*d, 2);
+			}
 			/*m = i, n = j;
 			*(image.idata1+i*image.width+j) = \
 					*(image.data+m*image.width+n);
@@ -300,7 +308,7 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 				continue; // to the next stage
 			}
 		}
-		printf("pass %d of %d stages\n", i_stage, haarcascade.stages.size());
+		// printf("pass %d of %d stages\n", i_stage, haarcascade.stages.size());
 		// pass all the stages
 		if(i_stage == haarcascade.stages.size())
 		{
