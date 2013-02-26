@@ -40,8 +40,8 @@ typedef struct Image
 {
 	unsigned int width, height;
 	unsigned char* data;
-	unsigned long* idata1;
-	unsigned long* idata2;
+	double* idata1;
+	double* idata2;
 }Image;
 
 typedef struct Point

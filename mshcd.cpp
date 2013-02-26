@@ -21,7 +21,7 @@ void mshcd(const char* imagefile, const char* haarcasadefile)
 	GetHaarCascade(haarcasadefile); // get classifer from file
 	GetIntergralImages(imagefile);  // calculate intergral image
 	HaarCasadeObjectDetection();    // start detection
-	ShowDetectionResult();     // show detection result
+	ShowDetectionResult();          // show detection result
 }
 /**
  * get Haar Cascade classifier from file
@@ -144,34 +144,36 @@ void GetIntergralImages(const char* imagefile)
 	fread(image.data, image.width*image.height, 1, fin);
 	fclose(fin);
 	
-	image.idata1 = (unsigned long*)malloc(size*sizeof(unsigned long));
-	memset(image.idata1, 0, size*sizeof(unsigned long));
-	image.idata2 = (unsigned long*)malloc(size*sizeof(unsigned long));
-	memset(image.idata2, 0, size*sizeof(unsigned long));
+	image.idata1 = (double*)malloc(size*sizeof(double));
+	memset(image.idata1, 0, size*sizeof(double));
+	image.idata2 = (double*)malloc(size*sizeof(double));
+	memset(image.idata2, 0, size*sizeof(double));
 	for(i=0; i<image.height; i++)
+	{
 		for(j=0; j<image.width; j++)
 		{
 			if(i>0)
 			{
-				unsigned long *d;
-				d = image.idata1 + (i-1)*image.width + j;
-				*(image.idata1+i*image.width+j) += *d;
-				d = image.idata2 + (i-1)*image.width + j;
-				*(image.idata2+i*image.width+j) += *d;
+				*(image.idata1+i*image.width+j) += \
+					*(image.idata1+(i-1)*image.width+j);
+				*(image.idata2+i*image.width+j) += \
+					*(image.idata2+(i-1)*image.width+j);
 			}
 			for(n=0; n<=j; n++)
 			{
 				unsigned char *d;
 				d = image.data + i*image.width + n;
-				*(image.idata1+i*image.width+j) += *d;
-				*(image.idata2+i*image.width+j) += pow(*d, 2);
+				*(image.idata1+i*image.width+j) += (*d)/255.0;
+				*(image.idata2+i*image.width+j) += pow(*d,2)/255.0/255.0;
 			}
-			/*m = i, n = j;
-			*(image.idata1+i*image.width+j) = \
-					*(image.data+m*image.width+n);
-			*(image.idata2+i*image.width+j) = \
-					pow(*(image.data+m*image.width+n), 2);*/
 		}
+	}
+	/*for(i=0; i<image.height; i++)
+	{
+		for(j=0; j<image.width; j++)
+			printf("%lf ", *(image.idata2+i*image.width+j));
+		printf("\n");
+	}*/
 	PRINT_FUNCTION_END_INFO();
 }
 
@@ -223,9 +225,9 @@ void HaarCasadeObjectDetection()
 	PRINT_FUNCTION_END_INFO();
 }
 
-unsigned long GetSumRect(int type,
-                         unsigned int x, unsigned int y,
-                         unsigned int w, unsigned int h)
+double GetSumRect(int type,
+                  unsigned int x, unsigned int y,
+                  unsigned int w, unsigned int h)
 {
 	if(w==0 || h==0)
 		return 0;
@@ -277,7 +279,7 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 	for(i=0; i<Variance.size(); i++)
 	{
 		if(Variance[i]<1.0) Variance[i] = 1.0;
-		StandardDeviation.push_back( sqrt(Variance[i]) );
+		StandardDeviation.push_back( sqrt(Variance[i]) );	
 	}
 	// If a coordinate doesn't pass the classifier threshold
 	// it is removed, otherwise it goes into the next classifier
