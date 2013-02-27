@@ -9,8 +9,10 @@ void GetIntergralImages(const char* imagefile);
 void HaarCasadeObjectDetection();
 void OneScaleObjectDetection(vector<Point> points, double Scale,
                              unsigned int w, unsigned int h);
-double TreeObjectDetection(Tree& tree, double Scale, Point& point,
-                           double StandardDeviation, double InverseArea);
+vector<double> TreeObjectDetection(Tree& tree, double Scale,
+                                   vector<Point>& points,
+                                   vector<double>& StandardDeviation,
+                                   double InverseArea);
 void ShowDetectionResult();
 
 void mshcd(const char* imagefile, const char* haarcasadefile)
@@ -283,46 +285,54 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 	}
 	// If a coordinate doesn't pass the classifier threshold
 	// it is removed, otherwise it goes into the next classifier
+	for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
+	{
+		DPRINTF("----Stage %d----\n", i_stage);
+		Stage &stage = haarcascade.stages[i_stage];
+		vector<double> StageSum(points.size(), 0.0);
+		for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
+		{
+			Tree &tree = stage.trees[i_tree];
+			vector<double> TreeSum;
+			DPRINTF("----Tree %d----\n", i_tree);
+			TreeSum = TreeObjectDetection(tree, Scale,
+				points, StandardDeviation, InverseArea);
+			for(i=0; i<points.size(); i++)
+				StageSum[i] += TreeSum[i];
+		}
+		vector<Point> tmp_points;
+		vector<double> tmp_StandardDeviation;
+		for(i=0; i<StageSum.size(); i++)
+		{
+			if(StageSum[i] >= stage.threshold)
+			{
+				tmp_points.push_back(points[i]);
+				tmp_StandardDeviation.push_back(StandardDeviation[i]);
+			}
+		}
+		points = tmp_points;
+		StandardDeviation = tmp_StandardDeviation;
+		// If the StageSum of a coordinate is lower than
+		// the treshold it is removed, otherwise it goes into the next stage
+		if(points.empty())
+		{
+			break;
+		}
+		else
+		{
+			continue; // to the next stage
+		}
+	}
+	// left coordinate(s) passed all the stages
 	for(i=0; i<points.size(); i++)
 	{
-		DPRINTF("----Point %d----\n", i);
-		for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
-		{
-			DPRINTF("----Stage %d----\n", i_stage);
-			Stage &stage = haarcascade.stages[i_stage];
-			double StageSum = 0.0;
-			for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
-			{
-				Tree &tree = stage.trees[i_tree];
-				double TreeSum;
-				DPRINTF("----Tree %d----\n", i_tree);
-				TreeSum = TreeObjectDetection(tree, Scale,
-					points[i], StandardDeviation[i], InverseArea);
-				StageSum += TreeSum;
-			}
-			// If the StageSum of a coordinate is lower than
-			// the treshold it is removed, otherwise it goes into the next stage
-			if(StageSum > stage.threshold)
-			{
-				break; // to the next point
-			}
-			else
-			{
-				continue; // to the next stage
-			}
-		}
-		// printf("pass %d of %d stages\n", i_stage, haarcascade.stages.size());
-		// pass all the stages
-		if(i_stage == haarcascade.stages.size())
-		{
-			Rect rect;
-			rect.x = points[i].x;
-			rect.y = points[i].y;
-			rect.width = width;
-			rect.height = height;
-			rect.weight = -1;
-			objects.push_back(rect);
-		}
+		Rect rect;
+		rect.x = points[i].x;
+		rect.y = points[i].y;
+		rect.width = width;
+		rect.height = height;
+		rect.weight = -1;
+		objects.push_back(rect);
 	}
 	PRINT_FUNCTION_END_INFO();
 }
@@ -330,37 +340,38 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 /**
  * get the current haar-classifier's value (left/right)
  */
-double TreeObjectDetection(Tree& tree, double Scale, Point& point,
-                           double StandardDeviation, double InverseArea)
+vector<double> TreeObjectDetection(Tree& tree, double Scale,
+                                   vector<Point>& points,
+                                   vector<double>& StandardDeviation,
+                                   double InverseArea)
 {
 	//Calculate the haar-feature response
-	unsigned int i_rect, check;
-	double Rectangle_sum, tree_threshold;
+	unsigned int i, i_rect;
+	vector<double> Rectangle_sum(points.size(), 0.0);
+	vector<double> Tree_sum(points.size(), 0.0);
 	//PRINT_FUNCTION_INFO();
-	Rectangle_sum = 0.0;
-	for(i_rect=0; i_rect<3; i_rect++)
+	for(i=0; i<points.size(); i++)
 	{
-		long r_sum = 0;
-		Rect &rect = tree.rects[i_rect];
-		DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
-		unsigned int RectX = rect.x * Scale + point.x;
-		unsigned int RectY = rect.y * Scale + point.y;
-		unsigned int RectWidth = rect.width * Scale;
-		unsigned int RectHeight = rect.height * Scale;
-		r_sum = (long)GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) \
-						* rect.weight;
-		Rectangle_sum += r_sum;
+		for(i_rect=0; i_rect<3; i_rect++)
+		{
+			long r_sum = 0;
+			Rect &rect = tree.rects[i_rect];
+			DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
+			unsigned int RectX = rect.x * Scale + points[i].x;
+			unsigned int RectY = rect.y * Scale + points[i].y;
+			unsigned int RectWidth = rect.width * Scale;
+			unsigned int RectHeight = rect.height * Scale;
+			r_sum = (long)GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) \
+							* rect.weight;
+			Rectangle_sum[i] += r_sum;
+		}
+		Rectangle_sum[i] *= InverseArea;
+		if(Rectangle_sum[i] >= tree.threshold*StandardDeviation[i])
+			Tree_sum[i] = tree.left_val;
+		else
+			Tree_sum[i] = tree.right_val;
 	}
-	Rectangle_sum *= InverseArea;
-	tree_threshold = Rectangle_sum - tree.threshold;
-	if(tree_threshold < 0.0)
-		tree_threshold *= (-1.0);
-	if(StandardDeviation < 0.0)
-		StandardDeviation *= (-1.0);
-	//for(i=0; i<StandardDeviation.size(); i++)
-	//	tree_threshold += tree.threshold*StandardDeviation[i];
-	//printf("%lf - %lf(%lf)\n", Rectangle_sum, tree.threshold, tree_threshold);
-	check = (StandardDeviation >= tree_threshold);
+	return Tree_sum;
 	/*
 	Leaf= Tree(Node+1,:);
 	LeafTreshold=Leaf(:,1);
@@ -370,10 +381,6 @@ double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 	Tree_sum(check) = RightValue(check);
 	Tree_sum(~check) = LeftValue(~check);
 	*/
-	if(check)
-		return tree.right_val;
-	else
-		return tree.left_val;
 }
 
 void ShowDetectionResult()
