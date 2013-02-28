@@ -9,9 +9,8 @@ void GetIntergralImages(const char* imagefile);
 void HaarCasadeObjectDetection();
 void OneScaleObjectDetection(vector<Point> points, double Scale,
                              unsigned int w, unsigned int h);
-vector<double> TreeObjectDetection(Tree& tree, double Scale,
-                                   vector<Point>& points,
-                                   unsigned int width, unsigned int height);
+double TreeObjectDetection(Tree& tree, double Scale, Point& point,
+                           unsigned int width, unsigned int height);
 void ShowDetectionResult();
 
 void mshcd(const char* imagefile, const char* haarcasadefile)
@@ -256,59 +255,36 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
                              unsigned int width, unsigned int height)
 {
 	unsigned int i, i_stage, i_tree;
-	vector<double> mean;
-	vector<double> Variance;
 	PRINT_FUNCTION_INFO();
-	// calculate the mean and gray-level varianceiance 
-	// of every search window
 	printf("Total %d rects to find\n", points.size());
-	// If a coordinate doesn't pass the classifier threshold
-	// it is removed, otherwise it goes into the next classifier
-	for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
-	{
-		DPRINTF("----Stage %d----", i_stage);
-		Stage &stage = haarcascade.stages[i_stage];
-		vector<double> StageSum(points.size(), 0.0);
-		for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
-		{
-			Tree &tree = stage.trees[i_tree];
-			vector<double> TreeSum;
-			//DPRINTF("----Tree %d----\n", i_tree);
-			TreeSum = TreeObjectDetection(tree, Scale, points, width, height);
-			for(i=0; i<points.size(); i++)
-				StageSum[i] += TreeSum[i];
-		}
-		vector<Point> tmp_points;
-		for(i=0; i<StageSum.size(); i++)
-		{
-			if(StageSum[i] >= stage.threshold)
-			{
-				tmp_points.push_back(points[i]);
-			}
-		}
-		points = tmp_points;
-		DPRINTF(" %d rects left\n", points.size());
-		// If the StageSum of a coordinate is lower than
-		// the treshold it is removed, otherwise it goes into the next stage
-		if(points.empty())
-		{
-			break;
-		}
-		else
-		{
-			continue; // to the next stage
-		}
-	}
-	// left coordinate(s) passed all the stages
 	for(i=0; i<points.size(); i++)
 	{
-		Rect rect;
-		rect.x = points[i].x;
-		rect.y = points[i].y;
-		rect.width = width;
-		rect.height = height;
-		rect.weight = -1;
-		objects.push_back(rect);
+		for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
+		{
+			//DPRINTF("----Stage %d----", i_stage);
+			Stage &stage = haarcascade.stages[i_stage];
+			double StageSum =  0.0;
+			for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
+			{
+				Tree &tree = stage.trees[i_tree];
+				//DPRINTF("----Tree %d----\n", i_tree);
+				StageSum += TreeObjectDetection(tree, Scale, points[i], width, height);
+			}
+			if(StageSum > stage.threshold)
+				continue;
+			else
+				break;
+		}
+		if(i_stage == haarcascade.stages.size())
+		{
+			Rect rect;
+			rect.x = points[i].x;
+			rect.y = points[i].y;
+			rect.width = width;
+			rect.height = height;
+			rect.weight = -1;
+			objects.push_back(rect);
+		}
 	}
 	PRINT_FUNCTION_END_INFO();
 }
@@ -316,42 +292,36 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 /**
  * get the current haar-classifier's value (left/right)
  */
-vector<double> TreeObjectDetection(Tree& tree, double Scale,
-                                   vector<Point>& points,
-                                   unsigned int width, unsigned int height)
+double TreeObjectDetection(Tree& tree, double Scale, Point& point,
+                           unsigned int width, unsigned int height)
 {
-	unsigned int i, i_rect;
+	unsigned int i_rect;
 	double total_x, total_x2, moy, vnorm;
 	double InverseArea = 1.0/(width*height);
-	vector<double> Rectangle_sum(points.size(), 0.0);
-	vector<double> Tree_sum(points.size(), 0.0);
+	double Rectangle_sum = 0.0;
 	//PRINT_FUNCTION_INFO();
-	for(i=0; i<points.size(); i++)
+	// get the variance of pixel values in the window
+	total_x = GetSumRect(II1, point.x, point.y, width, height);
+	total_x2 = GetSumRect(II2, point.x, point.y, width, height);
+	moy = total_x*InverseArea;
+	vnorm = total_x2*InverseArea - moy*moy;
+	vnorm=(vnorm>1.0)?sqrt(vnorm):1.0;
+	// for each rectangle in the feature
+	for(i_rect=0; i_rect<3; i_rect++)
 	{
-		// get the variance of pixel values in the window
-		total_x = GetSumRect(II1, points[i].x, points[i].y, width, height);
-		total_x2 = GetSumRect(II2, points[i].x, points[i].y, width, height);
-		moy = total_x*InverseArea;
-		vnorm = total_x2*InverseArea - moy*moy;
-		vnorm=(vnorm>1.0)?sqrt(vnorm):1.0;
-		// for each rectangle in the feature
-		for(i_rect=0; i_rect<3; i_rect++)
-		{
-			Rect &rect = tree.rects[i_rect];
-			//DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
-			unsigned int RectX = rect.x * Scale + points[i].x;
-			unsigned int RectY = rect.y * Scale + points[i].y;
-			unsigned int RectWidth = rect.width * Scale;
-			unsigned int RectHeight = rect.height * Scale;
-			Rectangle_sum[i] += (long)GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) * rect.weight;
-		}
-		Rectangle_sum[i] *= InverseArea;
-		if(Rectangle_sum[i] < tree.threshold*vnorm)
-			Tree_sum[i] = tree.left_val;
-		else
-			Tree_sum[i] = tree.right_val;
+		Rect &rect = tree.rects[i_rect];
+		//DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
+		unsigned int RectX = rect.x * Scale + point.x;
+		unsigned int RectY = rect.y * Scale + point.y;
+		unsigned int RectWidth = rect.width * Scale;
+		unsigned int RectHeight = rect.height * Scale;
+		Rectangle_sum += (long)GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) * rect.weight;
 	}
-	return Tree_sum;
+	Rectangle_sum *= InverseArea;
+	if(Rectangle_sum < tree.threshold*vnorm)
+		return tree.left_val;
+	else
+		return tree.right_val;
 }
 
 void ShowDetectionResult()
