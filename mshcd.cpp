@@ -64,7 +64,7 @@ void GetHaarCascade(const char* filename)
 					fscanf(fin, "%d", &rect.y);
 					fscanf(fin, "%d", &rect.width);
 					fscanf(fin, "%d", &rect.height);
-					fscanf(fin, "%d", &rect.weight);
+					fscanf(fin, "%lf", &rect.weight);
 					tree.rects[i] = rect;
 				}
 				else if(i == 2)
@@ -84,7 +84,7 @@ void GetHaarCascade(const char* filename)
 						fscanf(fin, "%d", &rect.y);
 						fscanf(fin, "%d", &rect.width);
 						fscanf(fin, "%d", &rect.height);
-						fscanf(fin, "%d", &rect.weight);
+						fscanf(fin, "%lf", &rect.weight);
 						tree.rects[i] = rect;
 					}
 					else

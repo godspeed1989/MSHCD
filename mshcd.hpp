@@ -13,7 +13,7 @@ typedef struct Rect
 {
 	unsigned int x, y;
 	unsigned int width, height;
-	int weight;
+	double weight;
 }Rect;
 typedef struct Tree
 {
