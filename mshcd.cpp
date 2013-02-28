@@ -234,7 +234,7 @@ double GetSumRect(int type,
 	if(w==0 || h==0)
 		return 0;
 	w--; h--;
-	DPRINTF("(%d %d) %d %d\n", x, y, w, h);
+	//DPRINTF("(%d %d) %d %d\n", x, y, w, h);
 	assert(x+w<image.width && y+h<image.height);
 	if(type == II1)
 		return	*( image.idata1+(y+h)*image.width+(x+w) )
@@ -287,21 +287,21 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 	// it is removed, otherwise it goes into the next classifier
 	for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
 	{
-		DPRINTF("----Stage %d----\n", i_stage);
+		DPRINTF("----Stage %d----", i_stage);
 		Stage &stage = haarcascade.stages[i_stage];
 		vector<double> StageSum(points.size(), 0.0);
 		for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
 		{
 			Tree &tree = stage.trees[i_tree];
 			vector<double> TreeSum;
-			DPRINTF("----Tree %d----\n", i_tree);
+			//DPRINTF("----Tree %d----\n", i_tree);
 			TreeSum = TreeObjectDetection(tree, Scale,
 				points, StandardDeviation, InverseArea);
 			for(i=0; i<points.size(); i++)
 				StageSum[i] += TreeSum[i];
 		}
 		vector<Point> tmp_points;
-		vector<double> tmp_StandardDeviation;
+		vector<double> tmp_StandardDeviation;		
 		for(i=0; i<StageSum.size(); i++)
 		{
 			if(StageSum[i] >= stage.threshold)
@@ -312,6 +312,8 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 		}
 		points = tmp_points;
 		StandardDeviation = tmp_StandardDeviation;
+		assert(points.size() == StandardDeviation.size());
+		DPRINTF(" %d rects left\n", points.size());
 		// If the StageSum of a coordinate is lower than
 		// the treshold it is removed, otherwise it goes into the next stage
 		if(points.empty())
@@ -356,7 +358,7 @@ vector<double> TreeObjectDetection(Tree& tree, double Scale,
 		{
 			long r_sum = 0;
 			Rect &rect = tree.rects[i_rect];
-			DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
+			//DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
 			unsigned int RectX = rect.x * Scale + points[i].x;
 			unsigned int RectY = rect.y * Scale + points[i].y;
 			unsigned int RectWidth = rect.width * Scale;
@@ -367,9 +369,9 @@ vector<double> TreeObjectDetection(Tree& tree, double Scale,
 		}
 		Rectangle_sum[i] *= InverseArea;
 		if(Rectangle_sum[i] >= tree.threshold*StandardDeviation[i])
-			Tree_sum[i] = tree.left_val;
-		else
 			Tree_sum[i] = tree.right_val;
+		else
+			Tree_sum[i] = tree.left_val;
 	}
 	return Tree_sum;
 	/*
