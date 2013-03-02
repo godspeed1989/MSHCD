@@ -18,9 +18,9 @@ typedef struct Feature
 {
 	Rect rects[3];
 	int nb_rects;
-	float threshold;
-	float left_val;
-	float right_val;
+	double threshold;
+	double left_val;
+	double right_val;
 	Point size;
 	int left_node;
 	int right_node;
@@ -30,28 +30,32 @@ typedef struct Feature
 	
 	Feature()
 	{
+		nb_rects = 0;
+		size.x = 20;
+		size.y = 20;
 	}
 	
-	Feature(float threshold,
-			float left_val,	int left_node,bool has_left_val,
-			float right_val,int right_node,bool has_right_val, Point size)
+	Feature(double threshold,
+			double left_val, int left_node,bool has_left_val,
+			double right_val, int right_node,bool has_right_val,
+			Point size)
 	{
 		nb_rects = 0;
-		this->threshold=threshold;
-		this->left_val=left_val;
+		this->size = size;
+		this->threshold = threshold;
+		this->left_val = left_val;
 		this->left_node = left_node;
 		this->has_left_val = has_left_val;
 		this->right_val = right_val;
 		this->right_node = right_node;
-		this->has_right_val=has_right_val;
-		this->size = size;
+		this->has_right_val = has_right_val;
 	}
 
-	int getLeftOrRight(Image& grayImage, Image& squares, int i, int j, float scale)
+	int getLeftOrRight(Image& grayImage, Image& squares, int i, int j, double scale)
 	{
 		/* Compute the area of the window.*/
-		int w=(int) (scale*size.x);
-		int h=(int)(scale*size.y);
+		int w = (int) (scale*size.x);
+		int h = (int) (scale*size.y);
 		double inv_area = 1.0/(w*h);
 		
 		/* Compute the sum (and squared sum) of the pixel values in the window, 
@@ -76,7 +80,7 @@ typedef struct Feature
 			/* Add the sum of pixel values in the rectangles 
 			 * (weighted by the rectangle's weight) to the total sum */
 			rect_sum += (int)((grayImage(rx2,ry2)-grayImage(rx1,ry2)-
-			grayImage(rx2,ry1)+grayImage(rx1,ry1))*r.weight);
+						grayImage(rx2,ry1)+grayImage(rx1,ry1))*r.weight);
 		}
 		double rect_sum2 = rect_sum*inv_area;
 
@@ -84,9 +88,10 @@ typedef struct Feature
 		return (rect_sum2<threshold*vnorm)?LEFT:RIGHT;
 	}
 
-	void add(Rect r)
+	void addRect(Rect r)
 	{
 		this->rects[nb_rects++] = r;
+		assert(nb_rects<=3);
 	}
 }Feature;
 

@@ -14,10 +14,10 @@ using namespace std;
 typedef struct Stage
 {
 	vector<Tree> trees;
-	float threshold;
+	double threshold;
 	Stage()
 	{}
-	Stage(float threshold)
+	Stage(double threshold)
 	{
 		this->threshold = threshold;
 	}
@@ -26,9 +26,9 @@ typedef struct Stage
 		this->trees.push_back(t);
 	}
 	
-	bool pass(Image& grayImage, Image& squares, int i, int j, float scale)
+	bool pass(Image& grayImage, Image& squares, int i, int j, double scale)
 	{
-		double sum=0;
+		double sum = 0;
 		/* Compute the sum of values returned by each tree of the stage. */
 		for(unsigned int i=0; i<trees.size(); i++)
 		{

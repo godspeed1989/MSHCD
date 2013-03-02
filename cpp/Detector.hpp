@@ -33,10 +33,11 @@ typedef struct Detector
 			fscanf(fin, "%d", &n_trees); // num of trees per stage
 			printf("Stage %d num_tree %d ", s, n_trees);
 			t = 1;
-			while(t <= n_trees && !feof(fin))  // get each tree's feature
+			while(t <= n_trees && !feof(fin)) // get each tree's feature
 			{
 				Tree tree;
 				Feature feature;
+				feature.size = size;
 				i = 0;
 				flag = 0;
 				trees = t;
@@ -55,7 +56,7 @@ typedef struct Detector
 						fscanf(fin, "%d", &rect.y1);
 						fscanf(fin, "%d", &rect.y2);
 						fscanf(fin, "%lf", &rect.weight);
-						feature.rects[i] = rect;
+						feature.addRect(rect);
 					}
 					else if(i == 2)
 					{
@@ -65,7 +66,7 @@ typedef struct Detector
 						{
 							feature.tilted = 0;
 							memset(&rect, 0, sizeof(Rect));
-							feature.rects[i] = rect;
+							feature.addRect(rect);
 						}
 						else if(value == 3) // exist 3rd rect
 						{
@@ -75,7 +76,7 @@ typedef struct Detector
 							fscanf(fin, "%d", &rect.y1);
 							fscanf(fin, "%d", &rect.y2);
 							fscanf(fin, "%lf", &rect.weight);
-							feature.rects[i] = rect;
+							feature.addRect(rect);
 						}
 						else
 							assert(0);
@@ -86,9 +87,9 @@ typedef struct Detector
 						switch(i)
 						{
 							case 2: fscanf(fin, "%d", &feature.tilted);     break;
-							case 3: fscanf(fin, "%f", &feature.threshold); break;
-							case 4: fscanf(fin, "%f", &feature.left_val);  break;
-							case 5: fscanf(fin, "%f", &feature.right_val); break;
+							case 3: fscanf(fin, "%lf", &feature.threshold); break;
+							case 4: fscanf(fin, "%lf", &feature.left_val);  break;
+							case 5: fscanf(fin, "%lf", &feature.right_val); break;
 						}
 						if(flag) i++;
 						if(!flag && i==5) i++;
@@ -96,12 +97,15 @@ typedef struct Detector
 					i++;
 				}
 				t++;
+				feature.has_left_val = false;
+				feature.has_right_val = false;
+				assert(feature.nb_rects<=3);
 				tree.addFeature(feature);
 				stage.addTree(tree);
 			}
 			s++;
 			assert(stage.trees.size() == trees);
-			fscanf(fin, "%d %f", &stages, &stage.threshold); // get threshold of stage
+			fscanf(fin, "%d %lf", &stages, &stage.threshold); // get threshold of stage
 			printf("threshold %lf\n", stage.threshold);
 			this->stages.push_back(stage);
 		}
@@ -115,26 +119,25 @@ typedef struct Detector
 		printf("Total features %ld\n", total_features);
 	}
 
-	/** Returns the list of detected objects in an image applying the Viola-Jones algorithm.
-	 * 
-	 * The algorithm tests, from sliding windows on the image, of variable size, which regions should be considered as searched objects.
+	/**
+	 * Returns the list of detected objects in an image applying the Viola-Jones algorithm.
+	 * The algorithm tests, from sliding windows on the image, of variable size, 
+	 * which regions should be considered as searched objects.
 	 * Please see Wikipedia for a description of the algorithm.
 	 * @param file The image file to scan.
 	 * @param baseScale The initial ratio between the window size and the Haar classifier size (default 2).
 	 * @param scale_inc The scale increment of the window size, at each step (default 1.25).
 	 * @param increment The shift of the window at each sub-step, in terms of percentage of the window size.
-	 * @return the list of rectangles containing searched objects, expressed in pixels.
 	 */
-	vector<Rectangle> getFaces(Image image, float baseScale,
-		float scale_inc, float increment)
+	vector<Rectangle> getFaces(Image image, double baseScale, double scale_inc, double increment)
 	{
 		vector<Rectangle> ret;
 		int width = image.getWidth();
 		int height = image.getHeight();
 		/* Compute the max scale of the detector, i.e. the size of the image divided by the size of the detector. */
-		float maxScale = min((width+0.0f)/size.x, (height+0.0f)/size.y);
+		double maxScale = min((width+0.0f)/size.x, (height+0.0f)/size.y);
 			
-		/* Compute the grayscale image, the integral image and the squared integral image.*/
+		printf("Compute the integral image and the squared integral image.\n");
 		Image grayImage(width, height);
 		Image squares(width, height);
 		for(int i=0; i<width; i++)
@@ -151,24 +154,24 @@ typedef struct Detector
 			}
 		}
 		
-		/*Heart of the algorithm : detection */
+		printf("Start to detection...\n");
 		/*For each scale of the detection window */
-		for(float scale=baseScale; scale<maxScale; scale*=scale_inc)
+		for(double scale=baseScale; scale<maxScale; scale*=scale_inc)
 		{
 			/*Compute the sliding step of the window*/
 			int step = (int) (scale * size.x * increment);
 			int w = (int) (scale * size.x);
 			int h = (int) (scale * size.y);
-			/*For each position of the window on the image, check whether the object is detected there.*/
+			printf("*****Scale %lf step %d width %d height %d\n", scale, step, w, h);
+			/*For each position of the window on the image
+			  check whether the object is detected there.*/
 			for(int i=0; i<width-w; i+=step)
 			{
 				for(int j=0; j<height-h; j+=step)
 				{
-					/* If Canny pruning is on, compute the edge density of the zone.
-					 * If it is too low, the object should not be there so skip the region.*/
 					bool pass = true;
 					/* Perform each stage of the detector on the window */
-					for(unsigned int k; k<stages.size(); k++)
+					for(unsigned int k=0; k<stages.size(); k++)
 					{
 						/*If one stage fails, the zone is rejected.*/
 						if(!stages[k].pass(grayImage, squares, i, j, scale))
@@ -181,6 +184,7 @@ typedef struct Detector
 					if(pass) ret.push_back(Rectangle(i, j, w, h));
 				}
 			}
+			printf("*****Found %d objects\n", ret.size());
 		}
 		return ret;
 		//return merge(ret,min_neighbors);

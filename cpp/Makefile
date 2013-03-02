@@ -4,7 +4,7 @@ TARGET=main
 
 all: $(TARGET)
 
-$(TARGET): $(TARGET).cpp
+$(TARGET): $(TARGET).cpp *.hpp
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:

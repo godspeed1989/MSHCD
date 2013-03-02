@@ -22,7 +22,7 @@ typedef struct Tree
 		features.push_back(f);
 	}
 
-	float getVal(Image& grayImage, Image& squares, int i, int j, float scale)
+	double getVal(Image& grayImage, Image& squares, int i, int j, double scale)
 	{
 		Feature& cur_node = features[0];
 		while(true)

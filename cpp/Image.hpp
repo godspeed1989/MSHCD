@@ -2,12 +2,14 @@
 #define __IMAGE_H__
 #include <assert.h>
 #include <stdlib.h>
+
 typedef struct Image
 {
 	unsigned int *data;
 	int w, h;
 	Image()
 	{
+		w = h = 0;
 		this->data = NULL;
 	}
 	Image(int w, int h)
@@ -18,8 +20,8 @@ typedef struct Image
 	}
 	~Image()
 	{
-		if(this->data)
-			free(this->data);
+		if(data)
+			free(data);
 	}
 	int getWidth()
 	{
@@ -31,8 +33,8 @@ typedef struct Image
 	}
 	unsigned int& operator () (int i, int j)
 	{
-		assert(this->data);
-		return *(this->data+j*this->w+j);
+		assert(data);
+		return *(data+j*w+j);
 	}
 }Image;
 
