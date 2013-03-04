@@ -26,18 +26,18 @@ typedef struct Stage
 		this->trees.push_back(t);
 	}
 	
-	bool pass(Image& grayImage, Image& squares, int i, int j, double scale)
+	bool pass(Image& grayImage, Image& squares, int x, int y, double scale)
 	{
 		double sum = 0;
 		/* Compute the sum of values returned by each tree of the stage. */
 		for(unsigned int i=0; i<trees.size(); i++)
 		{
-			sum += trees[i].getVal(grayImage, squares,i, j, scale);
+			//printf("*****Tree %d\n", i);
+			sum += trees[i].getVal(grayImage, squares, x, y, scale);
 		}
 		/* The stage succeeds if the sum exceeds the stage threshold */
 		return sum > threshold;
 	}
-
 }Stage;
 
 #endif

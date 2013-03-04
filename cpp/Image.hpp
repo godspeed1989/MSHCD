@@ -6,17 +6,18 @@
 typedef struct Image
 {
 	unsigned int *data;
-	int w, h;
+	unsigned int width, height;
 	Image()
 	{
-		w = h = 0;
+		this->width = this->height = 0;
 		this->data = NULL;
 	}
-	Image(int w, int h)
+	Image(unsigned int w, unsigned int h)
 	{
-		this->w = w;
-		this->h = h;
+		this->width = w;
+		this->height = h;
 		this->data = (unsigned int*)malloc(w*h*sizeof(unsigned int));
+		assert(this->data);
 	}
 	~Image()
 	{
@@ -25,16 +26,32 @@ typedef struct Image
 	}
 	int getWidth()
 	{
-		return this->w;
+		return this->width;
 	}
 	int getHeight()
 	{
-		return this->h;
+		return this->height;
 	}
-	unsigned int& operator () (int i, int j)
+	unsigned int getSum(unsigned int x, unsigned int y,
+						unsigned int w, unsigned int h)
+	{
+		if(x+w<width && y+h<height)
+			return	*( data+(y+h)*width+(x+w) )
+				+	*( data+(y+0)*width+(x+0) )
+				-	*( data+(y+h)*width+(x+0) )
+				-	*( data+(y+0)*width+(x+w) );
+		else
+		{
+			printf("Image: (%d+%d, %d+%d)\n", x, y, w, h);
+			printf("Image: %d %d\n", width, height);
+			assert(0);
+		}
+	}
+	unsigned int& operator () (unsigned int x, unsigned int y)
 	{
 		assert(data);
-		return *(data+j*w+j);
+		assert(x<width && y<height);
+		return *(data+y*width+x);
 	}
 }Image;
 

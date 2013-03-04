@@ -1,12 +1,16 @@
 CC=g++
-CFLAGS= -g -Wall
+CPPFLAGS= -g -Wall
 TARGET=main
 
 all: $(TARGET)
 
-$(TARGET): $(TARGET).cpp *.hpp
-	$(CC) $(CFLAGS) $< -o $@
+main.o: main.cpp Detector.hpp Stage.hpp Tree.hpp Feature.hpp Rect.hpp \
+ Point.hpp Image.hpp
+
+
+$(TARGET): $(TARGET).o
+#	$(CC) $(CPPFLAGS) $< -o $@
 
 clean:
-	rm -rf $(TARGET)
+	rm -rf $(TARGET) $(TARGET).o
 

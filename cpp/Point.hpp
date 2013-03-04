@@ -3,19 +3,32 @@
 
 typedef struct Point
 {
-	int x, y;
+	unsigned int x, y;
+	Point()
+	{
+		x = y = 0;
+	}
+	Point(unsigned int x, unsigned int y)
+	{
+		this->x = x;
+		this->y = y;
+	}
 }Point;
 
 typedef struct Rectangle
 {
-	int x, y;
-	int w, h;
-	Rectangle(int x, int y, int w, int h)
+	unsigned int x, y;
+	unsigned int width, height;
+	Rectangle()
+	{
+		x = y = width = height = 0;
+	}
+	Rectangle(unsigned int x, unsigned int y, unsigned int w, unsigned int h)
 	{
 		this->x = x;
 		this->y = y;
-		this->w = w;
-		this->h = h;
+		this->width = w;
+		this->height = h;
 	}
 }Rectangle;
 

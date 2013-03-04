@@ -21,27 +21,24 @@ typedef struct Feature
 	double threshold;
 	double left_val;
 	double right_val;
-	Point size;
 	int left_node;
 	int right_node;
 	bool has_left_val;
 	bool has_right_val;
+	unsigned int w, h;
 	int tilted;
 	
 	Feature()
 	{
-		nb_rects = 0;
-		size.x = 20;
-		size.y = 20;
+		w = h = nb_rects = 0;
+		left_node = right_node = 0;
+		has_left_val = has_right_val = false;
 	}
-	
 	Feature(double threshold,
-			double left_val, int left_node,bool has_left_val,
-			double right_val, int right_node,bool has_right_val,
-			Point size)
+			double left_val, int left_node, bool has_left_val,
+			double right_val, int right_node, bool has_right_val)
 	{
-		nb_rects = 0;
-		this->size = size;
+		w = h = nb_rects = 0;
 		this->threshold = threshold;
 		this->left_val = left_val;
 		this->left_node = left_node;
@@ -51,39 +48,37 @@ typedef struct Feature
 		this->has_right_val = has_right_val;
 	}
 
-	int getLeftOrRight(Image& grayImage, Image& squares, int i, int j, double scale)
+	int getLeftOrRight(Image& grayImage, Image& squares,
+						unsigned int x, unsigned int y, double scale)
 	{
 		/* Compute the area of the window.*/
-		int w = (int) (scale*size.x);
-		int h = (int) (scale*size.y);
 		double inv_area = 1.0/(w*h);
 		
 		/* Compute the sum (and squared sum) of the pixel values in the window, 
 		 * and get the mean and variance of pixel values
 		 * in the window. */
-		int total_x = grayImage(i+w,j+h)+grayImage(i,j)-grayImage(i,j+h)-grayImage(i+w,j);
-		int total_x2 = squares(i+w,j+h)+squares(i,j)-squares(i,j+h)-squares(i+w,j);
+		unsigned int total_x = grayImage.getSum(x, y, w, h);
+		unsigned int total_x2 = squares.getSum(x, y, w, h);
 		double moy = total_x*inv_area;
 		double vnorm = total_x2*inv_area - moy*moy;
 		vnorm = (vnorm>1.0)?sqrt(vnorm):1.0;
 
-		int rect_sum = 0;
+		double rect_sum = 0;
 		/* For each rectangle in the feature. */
 		for(int k=0; k<nb_rects; k++)
 		{
-			Rect r = rects[k];
+			Rect& rect = this->rects[k];
 			/* Scale the rectangle according to the window size. */
-			int rx1 = i+(int) (scale*r.x1);
-			int rx2 = i+(int) (scale*(r.x1+r.y1));
-			int ry1 = j+(int) (scale*r.x2);
-			int ry2 = j+(int) (scale*(r.x2+r.y2));
+			unsigned int RectX = rect.x * scale + x;
+			unsigned int RectY = rect.y * scale + y;
+			unsigned int RectWidth = rect.width * scale;
+			unsigned int RectHeight = rect.height * scale;
 			/* Add the sum of pixel values in the rectangles 
 			 * (weighted by the rectangle's weight) to the total sum */
-			rect_sum += (int)((grayImage(rx2,ry2)-grayImage(rx1,ry2)-
-						grayImage(rx2,ry1)+grayImage(rx1,ry1))*r.weight);
+			rect_sum += grayImage.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
 		}
 		double rect_sum2 = rect_sum*inv_area;
-
+		
 		/* Return LEFT or RIGHT depending on how the total sum compares to the threshold. */
 		return (rect_sum2<threshold*vnorm)?LEFT:RIGHT;
 	}
@@ -92,6 +87,15 @@ typedef struct Feature
 	{
 		this->rects[nb_rects++] = r;
 		assert(nb_rects<=3);
+	}
+	
+	void print()
+	{
+		rects[0].print();
+		rects[1].print();
+		rects[2].print();
+		printf("{L: %lf %d %d}\n", left_val, has_left_val, left_node);
+		printf("{R: %lf %d %d}\n", right_val, has_right_val, right_node);
 	}
 }Feature;
 

@@ -315,7 +315,7 @@ double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 		unsigned int RectY = rect.y * Scale + point.y;
 		unsigned int RectWidth = rect.width * Scale;
 		unsigned int RectHeight = rect.height * Scale;
-		Rectangle_sum += (long)GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) * rect.weight;
+		Rectangle_sum += GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) * rect.weight;
 	}
 	Rectangle_sum *= InverseArea;
 	if(Rectangle_sum < tree.threshold*vnorm)

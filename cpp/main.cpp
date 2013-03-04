@@ -6,7 +6,7 @@ int main()
 	const char * imagefile = "../tools/gray_img.raw";
 	const char * cascadefile = "../haar.txt";
 	FILE *fin;
-	int w, h;
+	unsigned int w, h;
 	
 	unsigned char* data;
 	unsigned long i, size;

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <math.h>
+#include <assert.h>
 #include "Feature.hpp"
 #include "Image.hpp"
 using namespace std;
@@ -22,13 +23,15 @@ typedef struct Tree
 		features.push_back(f);
 	}
 
-	double getVal(Image& grayImage, Image& squares, int i, int j, double scale)
+	double getVal(Image& grayImage, Image& squares, unsigned int x, unsigned int y, double scale)
 	{
+		assert(!features.empty());
 		Feature& cur_node = features[0];
 		while(true)
-		{
+		{	
+			//cur_node.print();
 			/* Compute the feature to see if we should go to the left or right child on the node.*/
-			int where = cur_node.getLeftOrRight(grayImage, squares, i, j, scale);
+			int where = cur_node.getLeftOrRight(grayImage, squares, x, y, scale);
 			if(where == LEFT)
 			{
 				/* If the left child has a value, return it.*/
@@ -42,7 +45,7 @@ typedef struct Tree
 					cur_node = features[cur_node.left_node];
 				}
 			}
-			else
+			else if(where == RIGHT)
 			{
 				/* If the right child has a value, return it.*/
 				if(cur_node.has_right_val)
@@ -54,6 +57,10 @@ typedef struct Tree
 					/* Else move to the right child node. */
 					cur_node = features[cur_node.right_node];
 				}
+			}
+			else
+			{
+				assert(0);
 			}
 		}
 	}

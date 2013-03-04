@@ -5,23 +5,27 @@
  */
 typedef struct Rect
 {
-	int x1, x2, y1, y2;
+	unsigned int x, y, width, height;
 	double weight;
 	Rect()
 	{
-		this->x1 = 0;
-		this->x2 = 0;
-		this->y1 = 0;
-		this->y2 = 0;
+		this->x = 0;
+		this->y = 0;
+		this->width = 0;
+		this->height = 0;
 		this->weight = 0;
 	}
-	Rect(int x1,int x2,int y1,int y2,double weight)
+	Rect(int x, int y, int width, int height, double weight)
 	{
-		this->x1 = x1;
-		this->x2 = x2;
-		this->y1 = y1;
-		this->y2 = y2;
+		this->x = x;
+		this->y = y;
+		this->width = width;
+		this->height = height;
 		this->weight = weight;
+	}
+	void print()
+	{
+		printf("{rect: %d %d %d %d %lf}\n", x, y, width, height, weight);
 	}
 }Rect;
 

@@ -35,9 +35,9 @@ typedef struct Detector
 			t = 1;
 			while(t <= n_trees && !feof(fin)) // get each tree's feature
 			{
-				Tree tree;
+				Rect rect;
 				Feature feature;
-				feature.size = size;
+				Tree tree;
 				i = 0;
 				flag = 0;
 				trees = t;
@@ -48,19 +48,17 @@ typedef struct Detector
 					assert(value == 1);
 					if(i < 2)
 					{
-						Rect rect;
 						fscanf(fin, "%d", &value);
 						assert(value == i+1);
-						fscanf(fin, "%d", &rect.x1);
-						fscanf(fin, "%d", &rect.x2);
-						fscanf(fin, "%d", &rect.y1);
-						fscanf(fin, "%d", &rect.y2);
+						fscanf(fin, "%d", &rect.x);
+						fscanf(fin, "%d", &rect.y);
+						fscanf(fin, "%d", &rect.width);
+						fscanf(fin, "%d", &rect.height);
 						fscanf(fin, "%lf", &rect.weight);
 						feature.addRect(rect);
 					}
 					else if(i == 2)
 					{
-						Rect rect;
 						fscanf(fin, "%d", &value);
 						if(value == 0)
 						{
@@ -71,10 +69,10 @@ typedef struct Detector
 						else if(value == 3) // exist 3rd rect
 						{
 							flag = 1;
-							fscanf(fin, "%d", &rect.x1);
-							fscanf(fin, "%d", &rect.x2);
-							fscanf(fin, "%d", &rect.y1);
-							fscanf(fin, "%d", &rect.y2);
+							fscanf(fin, "%d", &rect.x);
+							fscanf(fin, "%d", &rect.y);
+							fscanf(fin, "%d", &rect.width);
+							fscanf(fin, "%d", &rect.height);
 							fscanf(fin, "%lf", &rect.weight);
 							feature.addRect(rect);
 						}
@@ -97,8 +95,10 @@ typedef struct Detector
 					i++;
 				}
 				t++;
-				feature.has_left_val = false;
-				feature.has_right_val = false;
+				feature.w = 20;
+				feature.h = 20;
+				feature.has_left_val = true;
+				feature.has_right_val = true;
 				assert(feature.nb_rects<=3);
 				tree.addFeature(feature);
 				stage.addTree(tree);
@@ -132,25 +132,26 @@ typedef struct Detector
 	vector<Rectangle> getFaces(Image image, double baseScale, double scale_inc, double increment)
 	{
 		vector<Rectangle> ret;
-		int width = image.getWidth();
-		int height = image.getHeight();
+		unsigned int x, y, k;
+		unsigned int width = image.getWidth();
+		unsigned int height = image.getHeight();
 		/* Compute the max scale of the detector, i.e. the size of the image divided by the size of the detector. */
 		double maxScale = min((width+0.0f)/size.x, (height+0.0f)/size.y);
 			
 		printf("Compute the integral image and the squared integral image.\n");
 		Image grayImage(width, height);
 		Image squares(width, height);
-		for(int i=0; i<width; i++)
+		for(x=0; x<width; x++)
 		{
-			int col=0;
-			int col2=0;
-			for(int j=0; j<height; j++)
+			unsigned int col = 0;
+			unsigned int col2 = 0;
+			for(y=0; y<height; y++)
 			{
-				unsigned int value = image(i,j);
-				grayImage(i,j) = (i>0?grayImage(i-1,j):0) + col + value;
-				squares(i,j) = (i>0?squares(i-1,j):0) + col2 + value*value;
+				unsigned int value = image(x, y);
 				col += value;
 				col2 += value*value;
+				grayImage(x, y) = (x>0?grayImage(x-1,y):0) + col;
+				squares(x, y) = (x>0?squares(x-1,y):0) + col2;
 			}
 		}
 		
@@ -160,28 +161,29 @@ typedef struct Detector
 		{
 			/*Compute the sliding step of the window*/
 			int step = (int) (scale * size.x * increment);
-			int w = (int) (scale * size.x);
-			int h = (int) (scale * size.y);
+			unsigned int w = (scale * size.x);
+			unsigned int h = (scale * size.y);
 			printf("*****Scale %lf step %d width %d height %d\n", scale, step, w, h);
 			/*For each position of the window on the image
 			  check whether the object is detected there.*/
-			for(int i=0; i<width-w; i+=step)
+			for(x=0; x<width-w; x+=step)
 			{
-				for(int j=0; j<height-h; j+=step)
+				for(y=0; y<height-h; y+=step)
 				{
 					bool pass = true;
 					/* Perform each stage of the detector on the window */
-					for(unsigned int k=0; k<stages.size(); k++)
+					for(k=0; k<stages.size(); k++)
 					{
+						printf("*****Stage %d\n", k+1);
 						/*If one stage fails, the zone is rejected.*/
-						if(!stages[k].pass(grayImage, squares, i, j, scale))
+						if(!stages[k].pass(grayImage, squares, x, y, scale))
 						{
 							pass = false;
 							break;
 						}
 					}
 					/* If the window passed all stages, add it to the results. */
-					if(pass) ret.push_back(Rectangle(i, j, w, h));
+					if(pass) ret.push_back(Rectangle(x, y, w, h));
 				}
 			}
 			printf("*****Found %d objects\n", ret.size());
