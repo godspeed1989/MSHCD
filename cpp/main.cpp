@@ -5,9 +5,8 @@ int main()
 {
 	const char * imagefile = "../tools/gray_img.raw";
 	const char * cascadefile = "../haar.txt";
-	FILE *fin;
+	FILE *fin, *fout;
 	unsigned int w, h;
-	
 	unsigned char* data;
 	unsigned long i, size;
 	
@@ -28,7 +27,14 @@ int main()
 	free(data);
 	
 	Detector detect(cascadefile);
-	detect.getFaces(image, 1, 1.25f, 0.1f);
+	vector<Rectangle> obj = detect.getFaces(image, 1, 1.25f, 0.1f);
+	fout = fopen("result.txt", "w");
+	for(i=0; i<obj.size(); i++)
+	{
+		fprintf(fout, "%d %d %d %d\n", obj[i].x, obj[i].y, obj[i].width, obj[i].height);
+		printf("%d %d %d %d\n", obj[i].x, obj[i].y, obj[i].width, obj[i].height);
+	}
+	fclose(fout);
 	
 	return 0;
 }

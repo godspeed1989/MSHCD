@@ -57,8 +57,14 @@ typedef struct Feature
 		/* Compute the sum (and squared sum) of the pixel values in the window, 
 		 * and get the mean and variance of pixel values
 		 * in the window. */
+	#define GET_SUM
+	#ifdef GET_SUM
 		unsigned int total_x = grayImage.getSum(x, y, w, h);
 		unsigned int total_x2 = squares.getSum(x, y, w, h);
+	#else
+		unsigned int total_x = grayImage(x+w,y+h)+grayImage(x,y)-grayImage(x+w,y)-grayImage(x,y+h);
+		unsigned int total_x2 = squares(x+w,y+h)+squares(x,y)-squares(x+w,y)-squares(x,y+h);
+	#endif
 		double moy = total_x*inv_area;
 		double vnorm = total_x2*inv_area - moy*moy;
 		vnorm = (vnorm>1.0)?sqrt(vnorm):1.0;
@@ -69,6 +75,7 @@ typedef struct Feature
 		{
 			Rect& rect = this->rects[k];
 			/* Scale the rectangle according to the window size. */
+		#ifdef GET_SUM
 			unsigned int RectX = rect.x * scale + x;
 			unsigned int RectY = rect.y * scale + y;
 			unsigned int RectWidth = rect.width * scale;
@@ -76,6 +83,14 @@ typedef struct Feature
 			/* Add the sum of pixel values in the rectangles 
 			 * (weighted by the rectangle's weight) to the total sum */
 			rect_sum += (double)grayImage.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
+		#else
+			unsigned int rx1 = x+(unsigned int) (scale * rect.x);
+			unsigned int rx2 = x+(unsigned int) (scale * (rect.x+rect.width));
+			unsigned int ry1 = y+(unsigned int) (scale * rect.y);
+			unsigned int ry2 = y+(unsigned int) (scale * (rect.y+rect.height));
+			/* Add the sum of pixel values in the rectangles (weighted by the rectangle's weight) to the total sum */
+			rect_sum += (double)((grayImage(rx2,ry2)+grayImage(rx1,ry1)-grayImage(rx1,ry2)-grayImage(rx2,ry1))*rect.weight);
+		#endif
 		}
 		rect_sum *= inv_area;
 		/* Return LEFT or RIGHT depending on how the total sum compares to the threshold. */

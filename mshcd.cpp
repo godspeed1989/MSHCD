@@ -148,30 +148,30 @@ void GetIntergralImages(const char* imagefile)
 	memset(image.idata1, 0, size*sizeof(double));
 	image.idata2 = (double*)malloc(size*sizeof(double));
 	memset(image.idata2, 0, size*sizeof(double));
-	for(i=0; i<image.height; i++)
+	for(i=0; i<image.width; i++)
 	{
-		double row = 0.0;
-		double row2 = 0.0;
-		for(j=0; j<image.width; j++)
+		double col = 0.0;
+		double col2 = 0.0;
+		for(j=0; j<image.height; j++)
 		{
-			unsigned char value = *(image.data + i*image.width + j);	
+			unsigned char value = *(image.data + j*image.width + i);	
+			col += value;
+			col2 += value*value;
 			if(i>0)
 			{
-				*(image.idata1+i*image.width+j) += \
-					*(image.idata1+(i-1)*image.width+j);
-				*(image.idata2+i*image.width+j) += \
-					*(image.idata2+(i-1)*image.width+j);
+				*(image.idata1+j*image.width+i) += \
+					*(image.idata1+j*image.width+i-1);
+				*(image.idata2+j*image.width+i) += \
+					*(image.idata2+j*image.width+i-1);
 			}
-			row += value;
-			row2 += value*value;
-			*(image.idata1+i*image.width+j) += row;
-			*(image.idata2+i*image.width+j) += row2;
+			*(image.idata1+j*image.width+i) += col;
+			*(image.idata2+j*image.width+i) += col2;
 		}
 	}
-	/*for(i=0; i<image.height; i++)
+	/*for(i=0; i<10; i++)
 	{
-		for(j=0; j<image.width; j++)
-			printf("%lf ", *(image.idata2+i*image.width+j));
+		for(j=0; j<10; j++)
+			printf("%d ", (int)*(image.data+j*image.width+i));
 		printf("\n");
 	}*/
 	PRINT_FUNCTION_END_INFO();

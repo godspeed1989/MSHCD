@@ -131,7 +131,7 @@ typedef struct Detector
 	 */
 	vector<Rectangle> getFaces(Image& image, double baseScale, double scale_inc, double increment)
 	{
-		vector<Rectangle> ret;
+		vector<Rectangle> objects;
 		unsigned int x, y, k, max;
 		unsigned int width = image.getWidth();
 		unsigned int height = image.getHeight();
@@ -154,6 +154,12 @@ typedef struct Detector
 				squares(x, y) = (x>0?squares(x-1,y):0) + col2;
 			}
 		}
+		/*for(int i=0; i<10; i++)
+		{
+			for(int j=0; j<10; j++)
+				printf("%d ", grayImage(i,j));
+			printf("\n");
+		}*/
 		
 		printf("Start to detection...\n");
 		/*For each scale of the detection window */
@@ -164,7 +170,7 @@ typedef struct Detector
 			int step = (int) (scale * size.x * increment);
 			unsigned int w = (scale * size.x);
 			unsigned int h = (scale * size.y);
-			printf("*****Scale %lf step %d width %d height %d\n", scale, step, w, h);
+			printf("*****Scale %lf step %d width %d height %d ", scale, step, w, h);
 			/*For each position of the window on the image
 			  check whether the object is detected there.*/
 			max = 0;
@@ -186,13 +192,17 @@ typedef struct Detector
 					}
 					if(k>max) max = k;
 					/* If the window passed all stages, add it to the results. */
-					if(pass) ret.push_back(Rectangle(x, y, w, h));
+					if(pass)
+					{
+						printf("+");
+						objects.push_back(Rectangle(x, y, w, h));
+					}
 				}
 			}
-			printf("*****Found %d objects, max passed %d\n", ret.size(), max);
+			printf("\n*****Found %d objects, max passed %d\n", objects.size(), max);
 		}
-		return ret;
-		//return merge(ret,min_neighbors);
+		return objects;
+		//return merge(objects, min_neighbors);
 	}
 	
 	/** Merge the raw detections resulting from the detection step to avoid multiple detections of the same object.
