@@ -1,4 +1,3 @@
-package detection;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +7,7 @@ import java.util.List;
  */
 public class Tree {
 final static int LEFT = 0;
-final static int RIGHT=1;
+final static int RIGHT = 1;
 
 List<Feature> features;
 
@@ -37,6 +36,7 @@ public float getVal(int[][] grayImage, int[][] squares, int i, int j, float scal
 			else
 			{
 				/* Else move to the left child node. */
+				System.out.printf("Move to left child node\n");
 				cur_node = features.get(cur_node.left_node);
 			}
 		}
@@ -50,6 +50,7 @@ public float getVal(int[][] grayImage, int[][] squares, int i, int j, float scal
 			else
 			{
 				/* Else move to the right child node. */
+				System.out.printf("Move to right child node\n");
 				cur_node = features.get(cur_node.right_node);
 			}
 		}

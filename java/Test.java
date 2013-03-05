@@ -1,20 +1,13 @@
-package detection;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.event.*;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
 import java.util.*;
 import java.io.*;
 import javax.imageio.ImageIO;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -29,28 +22,26 @@ public class Test extends JFrame{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		Dessin d = new Dessin(image);
+		//Dessin d = new Dessin(image);
 		/* Build the detector from XML file */
-		//Detector detector=Detector.create(XMLFile);
-		/*Uncomment following to use the multi-threaded detector */
-		Detector detector = MultiThreadedDetector.create(XMLFile);
+		Detector detector = Detector.create(XMLFile);
 		/* Launch the detector with default parameters */
 		List<Rectangle> res=detector.getFaces(img.getAbsolutePath(), 1, 1.25f, 0.1f,1,true);
 		System.out.println(res.size()+" faces found!");
-        d.setRects(res);
+		System.exit(0);
+		/*d.setRects(res);
 		setContentPane(d);
 		this.setExtendedState(MAXIMIZED_BOTH);
 		this.addWindowListener(new WindowAdapter() {
         public void windowClosing(WindowEvent evt) {
             // Exit the application
             System.exit(0);
-        }
-    });
+        }});*/
 	}
-public static void main(String[] args) throws IOException
-{
-	new Test(new File(args[0]),args[1]).setVisible(true);
-}
+	public static void main(String[] args) throws IOException
+	{
+		new Test(new File(args[0]),args[1]).setVisible(true);
+	}
 
 }
 
@@ -75,7 +66,7 @@ class Dessin extends JPanel
 		if(img==null)
 			return;
 		Dimension dim=getSize();
-		//System.out.println("véridique");
+		//System.out.println("vï¿½ridique");
 		g1.clearRect(0,0, dim.width, dim.height);
 		double scale_x=dim.width*1.f/img_width;
 		double scale_y=dim.height*1.f/img_height;
@@ -87,13 +78,12 @@ class Dessin extends JPanel
 		
 		for(Rectangle rect : res)
 		{
-		int w=(int) (rect.width*scale);
-		int h=(int) (rect.height*scale);
-		int x=(int) (rect.x*scale)+x_img;
-		int y=(int) (rect.y*scale)+y_img;
-		g1.drawRect(x,y,w,h);
+			int w=(int) (rect.width*scale);
+			int h=(int) (rect.height*scale);
+			int x=(int) (rect.x*scale)+x_img;
+			int y=(int) (rect.y*scale)+y_img;
+			g1.drawRect(x,y,w,h);
 		}
-		
 	}
 
 	public void setRects(List<Rectangle> list) {

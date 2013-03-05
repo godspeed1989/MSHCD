@@ -1,8 +1,3 @@
-package detection;
-
-
-import java.util.ArrayList;
-import java.util.List;
 import java.awt.Point;
 
 /** A feature of the detector. A feature is located at a node of a tree, and returns LEFT or RIGHT depending on the comparison
@@ -50,23 +45,23 @@ public class Feature {
 		double vnorm=total_x2*inv_area-moy*moy;
 		vnorm=(vnorm>1)?Math.sqrt(vnorm):1;
 
-				int rect_sum=0;
-				/* For each rectangle in the feature. */
-				for(int k=0;k<nb_rects;k++)
-				{
-					Rect r = rects[k];
-					/* Scale the rectangle according to the window size. */
-					int rx1=i+(int) (scale*r.x1);
-					int rx2=i+(int) (scale*(r.x1+r.y1));
-					int ry1=j+(int) (scale*r.x2);
-					int ry2=j+(int) (scale*(r.x2+r.y2));
-					/* Add the sum of pixel values in the rectangles (weighted by the rectangle's weight) to the total sum */
-					rect_sum+=(int)((grayImage[rx2][ry2]-grayImage[rx1][ry2]-grayImage[rx2][ry1]+grayImage[rx1][ry1])*r.weight);
-				}
-				double rect_sum2=rect_sum*inv_area;
+		int rect_sum=0;
+		/* For each rectangle in the feature. */
+		for(int k=0;k<nb_rects;k++)
+		{
+			Rect r = rects[k];
+			/* Scale the rectangle according to the window size. */
+			int rx1=i+(int) (scale*r.x1);
+			int rx2=i+(int) (scale*(r.x1+r.y1));
+			int ry1=j+(int) (scale*r.x2);
+			int ry2=j+(int) (scale*(r.x2+r.y2));
+			/* Add the sum of pixel values in the rectangles (weighted by the rectangle's weight) to the total sum */
+			rect_sum+=(int)((grayImage[rx2][ry2]-grayImage[rx1][ry2]-grayImage[rx2][ry1]+grayImage[rx1][ry1])*r.weight);
+		}
+		double rect_sum2=rect_sum*inv_area;
 
-				/* Return LEFT or RIGHT depending on how the total sum compares to the threshold. */
-				return (rect_sum2<threshold*vnorm)?Tree.LEFT:Tree.RIGHT;
+		/* Return LEFT or RIGHT depending on how the total sum compares to the threshold. */
+		return (rect_sum2<threshold*vnorm)?Tree.LEFT:Tree.RIGHT;
 
 	}
 

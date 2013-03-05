@@ -254,9 +254,10 @@ double GetSumRect(int type,
 void OneScaleObjectDetection(vector<Point> points, double Scale,
                              unsigned int width, unsigned int height)
 {
-	unsigned int i, i_stage, i_tree;
+	unsigned int i, i_stage, i_tree, max;
 	PRINT_FUNCTION_INFO();
-	printf("Total %d rects to find\n", points.size());
+	printf("*****Total %d rects to find\n", points.size());
+	max = 0;
 	for(i=0; i<points.size(); i++)
 	{
 		for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
@@ -275,6 +276,7 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 			else
 				break;
 		}
+		if(i_stage > max) max = i_stage;
 		if(i_stage == haarcascade.stages.size())
 		{
 			Rect rect;
@@ -286,6 +288,7 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 			objects.push_back(rect);
 		}
 	}
+	printf("*****Max passed stage %d\n", max);
 	PRINT_FUNCTION_END_INFO();
 }
 
@@ -298,7 +301,7 @@ double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 	unsigned int i_rect;
 	double total_x, total_x2, moy, vnorm;
 	double InverseArea = 1.0/(width*height);
-	double Rectangle_sum = 0.0;
+	double Rectangle_sum;
 	//PRINT_FUNCTION_INFO();
 	// get the variance of pixel values in the window
 	total_x = GetSumRect(II1, point.x, point.y, width, height);
@@ -307,6 +310,7 @@ double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 	vnorm = total_x2*InverseArea - moy*moy;
 	vnorm=(vnorm>1.0)?sqrt(vnorm):1.0;
 	// for each rectangle in the feature
+	Rectangle_sum = 0.0;
 	for(i_rect=0; i_rect<3; i_rect++)
 	{
 		Rect &rect = tree.rects[i_rect];

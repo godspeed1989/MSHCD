@@ -157,7 +157,8 @@ typedef struct Detector
 		
 		printf("Start to detection...\n");
 		/*For each scale of the detection window */
-		for(double scale=baseScale; scale<maxScale; scale*=scale_inc)
+		double scale;
+		for(scale=baseScale; scale<maxScale; scale*=scale_inc)
 		{
 			/*Compute the sliding step of the window*/
 			int step = (int) (scale * size.x * increment);
@@ -188,7 +189,7 @@ typedef struct Detector
 					if(pass) ret.push_back(Rectangle(x, y, w, h));
 				}
 			}
-			printf("*****Found %d objects max passed %d\n", ret.size(), max);
+			printf("*****Found %d objects, max passed %d\n", ret.size(), max);
 		}
 		return ret;
 		//return merge(ret,min_neighbors);

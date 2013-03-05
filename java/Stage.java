@@ -1,5 +1,3 @@
-package detection;
-
 
 import java.util.LinkedList;
 import java.util.List;

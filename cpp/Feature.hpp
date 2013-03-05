@@ -75,12 +75,11 @@ typedef struct Feature
 			unsigned int RectHeight = rect.height * scale;
 			/* Add the sum of pixel values in the rectangles 
 			 * (weighted by the rectangle's weight) to the total sum */
-			rect_sum += grayImage.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
+			rect_sum += (double)grayImage.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
 		}
-		double rect_sum2 = rect_sum*inv_area;
-		
+		rect_sum *= inv_area;
 		/* Return LEFT or RIGHT depending on how the total sum compares to the threshold. */
-		return (rect_sum2<threshold*vnorm)?LEFT:RIGHT;
+		return (rect_sum<threshold*vnorm)?LEFT:RIGHT;
 	}
 
 	void addRect(Rect r)

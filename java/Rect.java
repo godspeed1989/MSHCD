@@ -1,4 +1,3 @@
-package detection;
 
 /** A simple class describing a rectangle, along with a weight.*/
 public class Rect {

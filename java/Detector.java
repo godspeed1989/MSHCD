@@ -1,6 +1,3 @@
-package detection;
-
-
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.Point;
@@ -8,17 +5,13 @@ import java.io.*;
 
 import org.jdom.*;
 import org.jdom.input.*;
-import org.jdom.filter.*;
-
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Iterator;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
-import javax.swing.JFrame;
 
 
 public class Detector {
@@ -150,6 +143,7 @@ Point size;
 			List<Rectangle> ret=new ArrayList<Rectangle>();
 			int width=image.getWidth();
 			int height=image.getHeight();
+			System.out.printf("%d X %d\n", width, height);
 			/* Compute the max scale of the detector, i.e. the size of the image divided by the size of the detector. */
 			float maxScale = (Math.min((width+0.f)/size.x,(height+0.0f)/size.y));
 			
@@ -188,6 +182,7 @@ Point size;
 				/*Compute the sliding step of the window*/
 				int step=(int) (scale*size.x*increment);
 				int size=(int) (scale*this.size.x);
+				System.out.printf("\n****Scale %f step %d w %d h %d", scale, step, this.size.x, size);
 				/*For each position of the window on the image, check whether the object is detected there.*/
 				for(int i=0;i<width-size;i+=step)
 				{
@@ -197,10 +192,10 @@ Point size;
 						 * If it is too low, the object should not be there so skip the region.*/
 						if(doCannyPruning)
 						{
-						int edges_density = canny[i+size][j+size]+canny[i][j]-canny[i][j+size]-canny[i+size][j];
-						int d = edges_density/size/size;
-						if(d<20||d>100)
-							continue;
+							int edges_density = canny[i+size][j+size]+canny[i][j]-canny[i][j+size]-canny[i+size][j];
+							int d = edges_density/size/size;
+							if(d<20||d>100)
+								continue;
 						}
 						boolean pass=true;
 						/* Perform each stage of the detector on the window. If one stage fails, the zone is rejected.*/
@@ -212,12 +207,16 @@ Point size;
 								break;}
 						}
 						/* If the window passed all stages, add it to the results. */
-						if(pass) ret.add(new Rectangle(i,j,size,size));
+						if(pass)
+						{
+							System.out.print("+");
+							ret.add(new Rectangle(i,j,size,size));
+						}
 					}
 				}
 			}
-			//sw.print("Single threaded : ");
-			return merge(ret,min_neighbors);
+			System.out.printf("\n Total found %d\n", ret.size());
+			return merge(ret, min_neighbors);
 	}
 	
 	/** Merge the raw detections resulting from the detection step to avoid multiple detections of the same object.
