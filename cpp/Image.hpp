@@ -19,6 +19,14 @@ typedef struct Image
 		this->data = (unsigned int*)malloc(w*h*sizeof(unsigned int));
 		assert(this->data);
 	}
+	Image(Image& image)
+	{
+		this->width = image.width;
+		this->height = image.height;
+		this->data = (unsigned int*)malloc(image.width*image.height*sizeof(unsigned int));
+		assert(this->data);
+		memcpy(this->data, image.data, image.width*image.height);
+	}
 	~Image()
 	{
 		if(data)
@@ -36,10 +44,12 @@ typedef struct Image
 						unsigned int w, unsigned int h)
 	{
 		if(x+w<width && y+h<height)
+		{
 			return	*( data+(y+h)*width+(x+w) )
 				+	*( data+(y+0)*width+(x+0) )
 				-	*( data+(y+h)*width+(x+0) )
 				-	*( data+(y+0)*width+(x+w) );
+		}
 		else
 		{
 			printf("Image: (%d+%d, %d+%d)\n", x, y, w, h);

@@ -129,10 +129,10 @@ typedef struct Detector
 	 * @param scale_inc The scale increment of the window size, at each step (default 1.25).
 	 * @param increment The shift of the window at each sub-step, in terms of percentage of the window size.
 	 */
-	vector<Rectangle> getFaces(Image image, double baseScale, double scale_inc, double increment)
+	vector<Rectangle> getFaces(Image& image, double baseScale, double scale_inc, double increment)
 	{
 		vector<Rectangle> ret;
-		unsigned int x, y, k;
+		unsigned int x, y, k, max;
 		unsigned int width = image.getWidth();
 		unsigned int height = image.getHeight();
 		/* Compute the max scale of the detector, i.e. the size of the image divided by the size of the detector. */
@@ -166,6 +166,7 @@ typedef struct Detector
 			printf("*****Scale %lf step %d width %d height %d\n", scale, step, w, h);
 			/*For each position of the window on the image
 			  check whether the object is detected there.*/
+			max = 0;
 			for(x=0; x<width-w; x+=step)
 			{
 				for(y=0; y<height-h; y+=step)
@@ -174,7 +175,7 @@ typedef struct Detector
 					/* Perform each stage of the detector on the window */
 					for(k=0; k<stages.size(); k++)
 					{
-						printf("*****Stage %d\n", k+1);
+						//printf("*****Stage %d\n", k+1);
 						/*If one stage fails, the zone is rejected.*/
 						if(!stages[k].pass(grayImage, squares, x, y, scale))
 						{
@@ -182,11 +183,12 @@ typedef struct Detector
 							break;
 						}
 					}
+					if(k>max) max = k;
 					/* If the window passed all stages, add it to the results. */
 					if(pass) ret.push_back(Rectangle(x, y, w, h));
 				}
 			}
-			printf("*****Found %d objects\n", ret.size());
+			printf("*****Found %d objects max passed %d\n", ret.size(), max);
 		}
 		return ret;
 		//return merge(ret,min_neighbors);
