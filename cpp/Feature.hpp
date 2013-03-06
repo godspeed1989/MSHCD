@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <math.h>
-#include "Rect.hpp"
+#include "Rectangle.hpp"
 #include "Point.hpp"
 #include "Image.hpp"
 using namespace std;
@@ -16,7 +16,7 @@ using namespace std;
 #define RIGHT  1
 typedef struct Feature
 {
-	Rect rects[3];
+	Rectangle rects[3];
 	int nb_rects;
 	double threshold;
 	double left_val;
@@ -73,7 +73,7 @@ typedef struct Feature
 		/* For each rectangle in the feature. */
 		for(int k=0; k<nb_rects; k++)
 		{
-			Rect& rect = this->rects[k];
+			Rectangle& rect = this->rects[k];
 			/* Scale the rectangle according to the window size. */
 		#ifdef GET_SUM
 			unsigned int RectX = rect.x * scale + x;
@@ -97,7 +97,7 @@ typedef struct Feature
 		return (rect_sum<threshold*vnorm)?LEFT:RIGHT;
 	}
 
-	void addRect(Rect r)
+	void addRect(Rectangle& r)
 	{
 		this->rects[nb_rects++] = r;
 		assert(nb_rects<=3);

@@ -15,22 +15,5 @@ typedef struct Point
 	}
 }Point;
 
-typedef struct Rectangle
-{
-	unsigned int x, y;
-	unsigned int width, height;
-	Rectangle()
-	{
-		x = y = width = height = 0;
-	}
-	Rectangle(unsigned int x, unsigned int y, unsigned int w, unsigned int h)
-	{
-		this->x = x;
-		this->y = y;
-		this->width = w;
-		this->height = h;
-	}
-}Rectangle;
-
 #endif
 

@@ -5,8 +5,8 @@ CFLAGS+= -g -DDEBUG
 
 all: $(TARGET)
 
-$(TARGET): $(TARGET).cpp
-	$(CC) $(CFLAGS) -o $@ $<
+$(TARGET): $(TARGET).cpp GetHaarCascade.cpp
+	$(CC) $(CFLAGS) -o $@ $+
 
 clean:
 	rm -rf $(TARGET)

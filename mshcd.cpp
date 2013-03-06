@@ -2,9 +2,9 @@
 
 static HaarCascade haarcascade;
 static Image image;
-static vector<Rect> objects;
+static vector<Rectangle> objects;
 
-void GetHaarCascade(const char* filename);
+void GetHaarCascade(const char* filename, vector<Stage>& Stages);
 void GetIntergralImages(const char* imagefile);
 void HaarCasadeObjectDetection();
 void OneScaleObjectDetection(vector<Point> points, double Scale,
@@ -18,111 +18,10 @@ void mshcd(const char* imagefile, const char* haarcasadefile)
 	haarcascade.size1 = 20;
 	haarcascade.size2 = 20;
 	haarcascade.ScaleUpdate = 1.0/1.2;
-	GetHaarCascade(haarcasadefile); // get classifer from file
+	GetHaarCascade(haarcasadefile, haarcascade.stages); // get classifer from file
 	GetIntergralImages(imagefile);  // calculate intergral image
 	HaarCasadeObjectDetection();    // start detection
 	ShowDetectionResult();          // show detection result
-}
-/**
- * get Haar Cascade classifier from file
- */
-void GetHaarCascade(const char* filename)
-{
-	FILE *fin;
-	unsigned int i, t, s, n_stages, n_trees;
-	unsigned int stages, trees, value, flag;
-	unsigned long total_features;
-	PRINT_FUNCTION_INFO();
-	fin = fopen(filename, "r");
-	assert(fin);
-	fscanf(fin, "%d", &n_stages);
-	printf("Total %d stages\n", n_stages);
-	s = 1;
-	while(!feof(fin) && s <= n_stages) // get each stage
-	{
-		Stage stage;
-		fscanf(fin, "%d", &n_trees); // num of trees per stage
-		printf("Stage %d num_tree %d ", s, n_trees);
-		t = 1;
-		while(t <= n_trees && !feof(fin))  // get each tree
-		{
-			Tree tree;
-			i = 0;
-			flag = 0;
-			trees = t;
-			while(t==trees && i<7)
-			{
-				fscanf(fin, "%d%d%d", &stages, &trees, &value);
-				assert(stages == s);
-				assert(value == 1);
-				if(i < 2)
-				{
-					Rect rect;
-					fscanf(fin, "%d", &value);
-					assert(value == i+1);
-					fscanf(fin, "%d", &rect.x);
-					fscanf(fin, "%d", &rect.y);
-					fscanf(fin, "%d", &rect.width);
-					fscanf(fin, "%d", &rect.height);
-					fscanf(fin, "%lf", &rect.weight);
-					tree.rects[i] = rect;
-				}
-				else if(i == 2)
-				{
-					Rect rect;
-					fscanf(fin, "%d", &value);
-					if(value == 0)
-					{
-						tree.tilted = 0;
-						memset(&rect, 0, sizeof(Rect));
-						tree.rects[i] = rect;
-					}
-					else if(value == 3) // exist 3rd rect
-					{
-						flag = 1;
-						fscanf(fin, "%d", &rect.x);
-						fscanf(fin, "%d", &rect.y);
-						fscanf(fin, "%d", &rect.width);
-						fscanf(fin, "%d", &rect.height);
-						fscanf(fin, "%lf", &rect.weight);
-						tree.rects[i] = rect;
-					}
-					else
-						assert(0);
-				}
-				else
-				{
-					if(flag) i--;  // exist 3rd rect
-					switch(i)
-					{
-						case 2: fscanf(fin, "%d", &tree.tilted);     break;
-						case 3: fscanf(fin, "%lf", &tree.threshold); break;
-						case 4: fscanf(fin, "%lf", &tree.left_val);  break;
-						case 5: fscanf(fin, "%lf", &tree.right_val); break;
-					}
-					if(flag) i++;
-					if(!flag && i==5) i++;
-				}
-				i++;
-			}
-			t++;
-			stage.trees.push_back(tree);
-		}
-		s++;
-		assert(stage.trees.size() == trees);
-		fscanf(fin, "%d %lf", &stages, &stage.threshold); // get threshold of stage
-		printf("threshold %lf\n", stage.threshold);
-		haarcascade.stages.push_back(stage);
-	}
-	total_features = 0;
-	for(i=0; i<haarcascade.stages.size(); i++)
-	{
-		printf("%d\t", i+1);
-		printf("%d\n", haarcascade.stages[i].trees.size());
-		total_features += haarcascade.stages[i].trees.size();
-	}
-	printf("Total features %ld\n", total_features);
-	PRINT_FUNCTION_END_INFO();
 }
 
 /**
@@ -279,7 +178,7 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 		if(i_stage > max) max = i_stage;
 		if(i_stage == haarcascade.stages.size())
 		{
-			Rect rect;
+			Rectangle rect;
 			rect.x = points[i].x;
 			rect.y = points[i].y;
 			rect.width = width;
@@ -313,7 +212,7 @@ double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 	Rectangle_sum = 0.0;
 	for(i_rect=0; i_rect<3; i_rect++)
 	{
-		Rect &rect = tree.rects[i_rect];
+		Rectangle &rect = tree.rects[i_rect];
 		//DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
 		unsigned int RectX = rect.x * Scale + point.x;
 		unsigned int RectY = rect.y * Scale + point.y;
@@ -337,7 +236,7 @@ void ShowDetectionResult()
 	fout = fopen("result.txt", "w");
 	for(i_obj=0; i_obj<objects.size(); i_obj++)
 	{
-		Rect &rect = objects[i_obj];
+		Rectangle &rect = objects[i_obj];
 		fprintf(fout, "%d %d %d %d\n", rect.x, rect.y, rect.width, rect.height);
 	}
 	fclose(fout);

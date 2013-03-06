@@ -9,15 +9,15 @@
 #include <vector>
 using namespace std;
 
-typedef struct Rect
+typedef struct Rectangle
 {
 	unsigned int x, y;
 	unsigned int width, height;
 	double weight;
-}Rect;
+}Rectangle;
 typedef struct Tree
 {
-	Rect rects[3];
+	Rectangle rects[3];
 	int tilted;
 	double threshold;
 	double left_val, right_val;
