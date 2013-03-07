@@ -4,7 +4,7 @@ static HaarCascade haarcascade;
 static Image image;
 static vector<Rectangle> objects;
 
-void GetHaarCascade(const char* filename, vector<Stage>& Stages);
+int GetHaarCascade(const char* filename, vector<Stage>& Stages);
 void GetIntergralImages(const char* imagefile);
 void HaarCasadeObjectDetection();
 void OneScaleObjectDetection(vector<Point> points, double Scale,
@@ -15,10 +15,10 @@ void ShowDetectionResult();
 
 void mshcd(const char* imagefile, const char* haarcasadefile)
 {
-	haarcascade.size1 = 20;
-	haarcascade.size2 = 20;
 	haarcascade.ScaleUpdate = 1.0/1.2;
+	haarcascade.size1 = haarcascade.size2 =
 	GetHaarCascade(haarcasadefile, haarcascade.stages); // get classifer from file
+	printf("Trained at %d x %d\n", haarcascade.size1,haarcascade.size2);
 	GetIntergralImages(imagefile);  // calculate intergral image
 	HaarCasadeObjectDetection();    // start detection
 	ShowDetectionResult();          // show detection result
@@ -245,7 +245,7 @@ void ShowDetectionResult()
 
 int main()
 {
-	mshcd("./tools/gray_img.raw", "haar.txt");
+	mshcd("./tools/gray_img.raw", "haar_alt.txt");
 	return 0;
 }
 

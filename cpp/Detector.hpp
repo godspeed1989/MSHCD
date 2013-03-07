@@ -9,7 +9,7 @@
 #include "Point.hpp"
 using namespace std;
 
-void GetHaarCascade(const char* filename, vector<Stage>& Stages);
+int GetHaarCascade(const char* filename, vector<Stage>& Stages);
 
 typedef struct Detector
 {
@@ -18,9 +18,9 @@ typedef struct Detector
 	
 	Detector(const char* filename)
 	{
-		size.x = 20;
-		size.y = 20;
+		size.x = size.y =
 		GetHaarCascade(filename, stages);
+		printf("Trained at %d x %d\n", size.x, size.y);
 	}
 
 	/**

@@ -5,14 +5,17 @@
 /**
  * get Haar Cascade classifier from file
  */
-void GetHaarCascade(const char* filename, vector<Stage>& Stages)
+int GetHaarCascade(const char* filename, vector<Stage>& Stages)
 {
 	FILE *fin;
+	int size;
 	unsigned int i, t, s, n_stages, n_trees;
 	unsigned int stages, trees, value, flag;
 	unsigned long total_features;
 	fin = fopen(filename, "r");
 	assert(fin);
+	fscanf(fin, "%d%d", &size, &size);
+	printf("Sample size %d x %d\n", size, size);
 	fscanf(fin, "%d", &n_stages);
 	printf("Total %d stages\n", n_stages);
 	s = 1;
@@ -106,5 +109,6 @@ void GetHaarCascade(const char* filename, vector<Stage>& Stages)
 		total_features += Stages[i].trees.size();
 	}
 	printf("Total features %ld\n", total_features);
+	return size;
 }
 

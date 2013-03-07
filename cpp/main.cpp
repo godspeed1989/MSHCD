@@ -4,7 +4,7 @@
 int main()
 {
 	const char * imagefile = "../tools/gray_img.raw";
-	const char * cascadefile = "../haar.txt";
+	const char * cascadefile = "../haar_alt.txt";
 	FILE *fin, *fout;
 	unsigned int w, h;
 	unsigned char* data;

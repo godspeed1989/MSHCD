@@ -2,7 +2,7 @@
 #coding: utf-8
 import re
 re_brac = re.compile("\((\d+)\)")
-with open("haarcascade_frontalface_alt.txt", "rb") as fp:
+with open("haarcascade_frontalface_default.m", "rb") as fp:
     for line in fp.readlines():
         line = line.strip()
         res = re_brac.findall(line)

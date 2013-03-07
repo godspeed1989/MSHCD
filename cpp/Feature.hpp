@@ -57,7 +57,7 @@ typedef struct Feature
 		/* Compute the sum (and squared sum) of the pixel values in the window, 
 		 * and get the mean and variance of pixel values
 		 * in the window. */
-	#define GET_SUM
+	//#define GET_SUM
 	#ifdef GET_SUM
 		unsigned int total_x = grayImage.getSum(x, y, w, h);
 		unsigned int total_x2 = squares.getSum(x, y, w, h);
