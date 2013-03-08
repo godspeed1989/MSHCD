@@ -53,18 +53,17 @@ void GetIntergralImages(const char* imagefile)
 		double col2 = 0.0;
 		for(j=0; j<image.height; j++)
 		{
-			unsigned char value = *(image.data + j*image.width + i);	
+			unsigned int idx = j*image.width + i;
+			unsigned char value = *(image.data + idx);	
 			col += value;
 			col2 += value*value;
 			if(i>0)
 			{
-				*(image.idata1+j*image.width+i) += \
-					*(image.idata1+j*image.width+i-1);
-				*(image.idata2+j*image.width+i) += \
-					*(image.idata2+j*image.width+i-1);
+				*(image.idata1+idx) = *(image.idata1+j*image.width+i-1);
+				*(image.idata2+idx) = *(image.idata2+j*image.width+i-1);
 			}
-			*(image.idata1+j*image.width+i) += col;
-			*(image.idata2+j*image.width+i) += col2;
+			*(image.idata1+idx) += col;
+			*(image.idata2+idx) += col2;
 		}
 	}
 	/*for(i=0; i<10; i++)
@@ -154,15 +153,16 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
                              unsigned int width, unsigned int height)
 {
 	unsigned int i, i_stage, i_tree, max;
-	PRINT_FUNCTION_INFO();
+	//PRINT_FUNCTION_INFO();
 	printf("*****Total %d rects to find\n", points.size());
 	max = 0;
 	for(i=0; i<points.size(); i++)
 	{
+		int pass = 1;
 		for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
 		{
 			//DPRINTF("----Stage %d----", i_stage);
-			Stage &stage = haarcascade.stages[i_stage];
+			Stage &stage = haarcascade.stages[i_stage];	
 			double StageSum =  0.0;
 			for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
 			{
@@ -173,10 +173,13 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 			if(StageSum > stage.threshold)
 				continue;
 			else
+			{
+				pass = 0;
 				break;
+			}
 		}
 		if(i_stage > max) max = i_stage;
-		if(i_stage == haarcascade.stages.size())
+		if(pass)
 		{
 			Rectangle rect;
 			rect.x = points[i].x;
@@ -188,7 +191,7 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 		}
 	}
 	printf("*****Max passed stage %d\n", max);
-	PRINT_FUNCTION_END_INFO();
+	//PRINT_FUNCTION_END_INFO();
 }
 
 /**
@@ -197,31 +200,51 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 double TreeObjectDetection(Tree& tree, double Scale, Point& point,
                            unsigned int width, unsigned int height)
 {
-	unsigned int i_rect;
+	unsigned int i_rect, x, y;
+	double InverseArea;
 	double total_x, total_x2, moy, vnorm;
-	double InverseArea = 1.0/(width*height);
 	double Rectangle_sum;
+	x = point.x;
+	y = point.y;
 	//PRINT_FUNCTION_INFO();
 	// get the variance of pixel values in the window
+	InverseArea = 1.0/(width*height);
+	//#define GET_SUM
+	#ifdef GET_SUM
 	total_x = GetSumRect(II1, point.x, point.y, width, height);
 	total_x2 = GetSumRect(II2, point.x, point.y, width, height);
-	moy = total_x*InverseArea;
-	vnorm = total_x2*InverseArea - moy*moy;
-	vnorm=(vnorm>1.0)?sqrt(vnorm):1.0;
+	#else
+	total_x = image(II1, x+width, y+height) + image(II1, x, y)
+			- image(II1, x+width, y) - image(II1, x, y+height);
+	total_x2 = image(II2, x+width, y+height) + image(II2, x, y)
+			- image(II2, x+width, y) - image(II2, x, y+height);
+	#endif
+	moy = total_x * InverseArea;
+	vnorm = total_x2 * InverseArea - moy * moy;
+	vnorm = (vnorm > 1) ? sqrt(vnorm) : 1;
 	// for each rectangle in the feature
 	Rectangle_sum = 0.0;
 	for(i_rect=0; i_rect<3; i_rect++)
 	{
 		Rectangle &rect = tree.rects[i_rect];
 		//DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
-		unsigned int RectX = rect.x * Scale + point.x;
-		unsigned int RectY = rect.y * Scale + point.y;
+	#ifdef GET_SUM
+		unsigned int RectX = rect.x * Scale + x;
+		unsigned int RectY = rect.y * Scale + y;
 		unsigned int RectWidth = rect.width * Scale;
 		unsigned int RectHeight = rect.height * Scale;
 		Rectangle_sum += GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) * rect.weight;
+	#else
+		unsigned int rx1 = x + (unsigned int) (Scale * rect.x);
+		unsigned int rx2 = x + (unsigned int) (Scale * (rect.x+rect.width));
+		unsigned int ry1 = y + (unsigned int) (Scale * rect.y);
+		unsigned int ry2 = y + (unsigned int) (Scale * (rect.y+rect.height));
+		Rectangle_sum += (image(II1, rx2, ry2) + image(II1, rx1, ry1)
+						- image(II1, rx2, ry1) - image(II1, rx1, ry2)) * rect.weight;
+	#endif
 	}
-	Rectangle_sum *= InverseArea;
-	if(Rectangle_sum < tree.threshold*vnorm)
+	double Rectangle_sum2 = Rectangle_sum * InverseArea;
+	if(Rectangle_sum2 < tree.threshold*vnorm)
 		return tree.left_val;
 	else
 		return tree.right_val;

@@ -42,6 +42,15 @@ typedef struct Image
 	unsigned char* data;
 	double* idata1;
 	double* idata2;
+	double operator () (int type, unsigned int x, unsigned int y)
+	{
+		assert(x<width && y<height);
+		if(type == II1)
+			return *(idata1 + y*width + x);
+		if(type == II2)
+			return *(idata2 + y*width + x);
+		return 0;
+	}
 }Image;
 
 typedef struct Point

@@ -82,19 +82,19 @@ typedef struct Feature
 			unsigned int RectHeight = rect.height * scale;
 			/* Add the sum of pixel values in the rectangles 
 			 * (weighted by the rectangle's weight) to the total sum */
-			rect_sum += (double)grayImage.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
+			rect_sum += grayImage.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
 		#else
 			unsigned int rx1 = x+(unsigned int) (scale * rect.x);
 			unsigned int rx2 = x+(unsigned int) (scale * (rect.x+rect.width));
 			unsigned int ry1 = y+(unsigned int) (scale * rect.y);
 			unsigned int ry2 = y+(unsigned int) (scale * (rect.y+rect.height));
 			/* Add the sum of pixel values in the rectangles (weighted by the rectangle's weight) to the total sum */
-			rect_sum += (double)((grayImage(rx2,ry2)+grayImage(rx1,ry1)-grayImage(rx1,ry2)-grayImage(rx2,ry1))*rect.weight);
+			rect_sum += (grayImage(rx2,ry2)+grayImage(rx1,ry1)-grayImage(rx1,ry2)-grayImage(rx2,ry1))*rect.weight;
 		#endif
 		}
-		rect_sum *= inv_area;
+		double rect_sum2 = rect_sum*inv_area;
 		/* Return LEFT or RIGHT depending on how the total sum compares to the threshold. */
-		return (rect_sum<threshold*vnorm)?LEFT:RIGHT;
+		return (rect_sum2 < threshold*vnorm)?LEFT:RIGHT;
 	}
 
 	void addRect(Rectangle& r)
