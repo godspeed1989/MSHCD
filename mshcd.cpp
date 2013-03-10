@@ -162,7 +162,7 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 		for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
 		{
 			//DPRINTF("----Stage %d----", i_stage);
-			Stage &stage = haarcascade.stages[i_stage];	
+			Stage &stage = haarcascade.stages[i_stage];
 			double StageSum =  0.0;
 			for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
 			{

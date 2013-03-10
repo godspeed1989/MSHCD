@@ -27,7 +27,7 @@ int main()
 	free(data);
 	
 	Detector detect(cascadefile);
-	vector<Rectangle> obj = detect.getFaces(image, 1, 1.25f, 0.1f);
+	vector<Rectangle> obj = detect.getFaces(image, 1, 1.2f, 0.1f);
 	fout = fopen("result.txt", "w");
 	for(i=0; i<obj.size(); i++)
 	{

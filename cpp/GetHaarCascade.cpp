@@ -87,8 +87,8 @@ int GetHaarCascade(const char* filename, vector<Stage>& Stages)
 				i++;
 			}
 			t++;
-			feature.w = 20;
-			feature.h = 20;
+			feature.width = size;
+			feature.height = size;
 			feature.has_left_val = true;
 			feature.has_right_val = true;
 			assert(feature.nb_rects<=3);
