@@ -15,7 +15,7 @@ void ShowDetectionResult();
 
 void mshcd(const char* imagefile, const char* haarcasadefile)
 {
-	haarcascade.ScaleUpdate = 1.0/1.2;
+	haarcascade.ScaleUpdate = 1.0/1.4;
 	haarcascade.size1 = haarcascade.size2 =
 	GetHaarCascade(haarcasadefile, haarcascade.stages); // get classifer from file
 	printf("Trained at %d x %d\n", haarcascade.size1,haarcascade.size2);
@@ -268,7 +268,7 @@ void ShowDetectionResult()
 
 int main()
 {
-	mshcd("./tools/gray_img.raw", "haar_alt.txt");
+	mshcd("../tools/gray_img.raw", "../haar_alt.txt");
 	return 0;
 }
 

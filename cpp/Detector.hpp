@@ -18,8 +18,7 @@ typedef struct Detector
 	
 	Detector(const char* filename)
 	{
-		size.x = size.y =
-		GetHaarCascade(filename, stages);
+		size.x = size.y = GetHaarCascade(filename, stages);
 		printf("Trained at %d x %d\n", size.x, size.y);
 	}
 
@@ -33,16 +32,18 @@ typedef struct Detector
 	 * @param scale_inc The scale increment of the window size, at each step (default 1.25).
 	 * @param increment The shift of the window at each sub-step, in terms of percentage of the window size.
 	 */
-	vector<Rectangle> getFaces(Image& image, double baseScale, double scale_inc, double increment)
+	vector<Rectangle> getFaces(Image& image, double baseScale,
+	                           double scale_inc, double increment,
+	                           unsigned int min_neighbors)
 	{
 		vector<Rectangle> objects;
-		unsigned int x, y, k, max;
+		unsigned int x, y, k;
 		unsigned int width = image.getWidth();
 		unsigned int height = image.getHeight();
 		/* Compute the max scale of the detector, i.e. the size of the image divided by the size of the detector. */
 		double maxScale = min((width+0.0f)/size.x, (height+0.0f)/size.y);
 			
-		printf("Compute the integral image and the squared integral image.\n");
+		printf("Computing integral image and squared integral image.\n");
 		Image grayImage(width, height);
 		Image squares(width, height);
 		for(x=0; x<width; x++)
@@ -77,7 +78,6 @@ typedef struct Detector
 			printf("*****Scale %lf step %d width %d height %d ", scale, step, w, h);
 			/*For each position of the window on the image
 			  check whether the object is detected there.*/
-			max = 0;
 			for(x=0; x<width-w; x+=step)
 			{
 				for(y=0; y<height-h; y+=step)
@@ -94,7 +94,6 @@ typedef struct Detector
 							break;
 						}
 					}
-					if(k>max) max = k;
 					/* If the window passed all stages, add it to the results. */
 					if(pass)
 					{
@@ -103,87 +102,100 @@ typedef struct Detector
 					}
 				}
 			}
-			printf("\n*****Found %d objects, max passed %d\n", objects.size(), max);
+			printf("\n");
 		}
-		return objects;
-		//return merge(objects, min_neighbors);
+		/* The size of detected objects is in a increase sequence */
+		printf("Total found %d objects\n", objects.size());
+		return merge(objects, min_neighbors);
 	}
 	
-	/** Merge the raw detections resulting from the detection step to avoid multiple detections of the same object.
-	 * A threshold on the minimum numbers of rectangles that need to be merged for the resulting detection to be kept can be given,
+	/** Merge the raw detections resulting from the detection step 
+	 * to avoid multiple detections of the same object.
+	 * A threshold on the minimum numbers of rectangles
+	 * that need to be merged for the resulting detection to be kept can be given,
 	 * to lower the rate of false detections.
 	 * Two rectangles need to be merged if they overlap enough.
 	 * @param rects The raw detections returned by the detection algorithm.
 	 * @param min_neighbors The minimum number of rectangles needed for the corresponding detection to be kept.
 	 * @return The merged rectangular detections.
-	
-	public List<java.awt.Rectangle> merge(List<java.awt.Rectangle> rects, int min_neighbors)
+	 */
+	vector<Rectangle> merge(vector<Rectangle> objs, unsigned int min_neighbors)
 	{
-		 List<java.awt.Rectangle> retour=new  LinkedList<java.awt.Rectangle>();
-		int[] ret=new int[rects.size()];
-		int nb_classes=0;
-		for(int i=0;i<rects.size();i++)
+		vector<Rectangle> ret;
+		int *mark = new int[objs.size()];
+		int nb_classes = 0;
+		/* mark each rectangle with a class number */
+		for(unsigned int i=0; i<objs.size(); i++)
 		{
-			boolean found=false;
-			for(int j=0;j<i;j++)
+			bool found = false;
+			for(unsigned int j=0; j<i; j++)
 			{
-				if(equals(rects.get(j),rects.get(i)))
+				if(equals(objs[i], objs[j]))
 				{
-					found=true;
-					ret[i]=ret[j];
+					found = true;
+					mark[i] = mark[j];
 				}
 			}
 			if(!found)
 			{
-				ret[i]=nb_classes;
+				mark[i] = nb_classes;
 				nb_classes++;
 			}
 		}
-		int[] neighbors=new int[nb_classes];
-		Rectangle[] rect=new Rectangle[nb_classes];
-		for(int i=0;i<nb_classes;i++)
+		unsigned int *neighbors = new unsigned int[nb_classes];
+		Rectangle *rects = new Rectangle[nb_classes];
+		for(int i=0; i<nb_classes; i++)
 		{
-			neighbors[i]=0;
-			rect[i]=new Rectangle(0,0,0,0);
+			neighbors[i] = 0;
+			rects[i].x = rects[i].y = rects[i].width = rects[i].height = 0;
 		}
-		for(int i=0;i<rects.size();i++)
+		/* calculate number of rects of each class */
+		for(unsigned int i=0; i<objs.size(); i++)
 		{
-			neighbors[ret[i]]++;
-			rect[ret[i]].x+=rects.get(i).x;
-			rect[ret[i]].y+=rects.get(i).y;
-			rect[ret[i]].height+=rects.get(i).height;
-			rect[ret[i]].width+=rects.get(i).width;
+			neighbors[mark[i]]++;
+			rects[mark[i]].x += objs[i].x;
+			rects[mark[i]].y += objs[i].y;
+			rects[mark[i]].width += objs[i].width;
+			rects[mark[i]].height += objs[i].height;
 		}
-		for(int i = 0; i < nb_classes; i++ )
-        {
-            int n = neighbors[i];
-            if( n >= min_neighbors)
-            {
-            	Rectangle r=new Rectangle(0,0,0,0);
-                r.x = (rect[i].x*2 + n)/(2*n);
-                r.y = (rect[i].y*2 + n)/(2*n);
-                r.width = (rect[i].width*2 + n)/(2*n);
-                r.height = (rect[i].height*2 + n)/(2*n);
-                retour.add(r);
-            }
-        }
-		return retour;
-	} */
+		for(int i=0; i<nb_classes; i++)
+		{
+			unsigned int n = neighbors[i];
+			if(n >= min_neighbors)
+			{
+				Rectangle r;
+				r.x = (rects[i].x*2 + n)/(2*n);
+				r.y = (rects[i].y*2 + n)/(2*n);
+				r.width = (rects[i].width*2 + n)/(2*n);
+				r.height = (rects[i].height*2 + n)/(2*n);
+				ret.push_back(r);
+			}
+		}
+        delete []mark;
+        delete []neighbors;
+        delete []rects;
+		return ret;
+	}
 	
-	/** Returns true if two rectangles overlap and should be merged.
-	public boolean equals(Rectangle r1, Rectangle r2)
+	/** Returns true if two rectangles overlap */
+	bool equals(Rectangle& r1, Rectangle& r2)
 	{
-		int distance = (int)(r1.width*0.2);
-
-		if(r2.x <= r1.x + distance &&
-	           r2.x >= r1.x - distance &&
-	           r2.y <= r1.y + distance &&
-	           r2.y >= r1.y - distance &&
-	           r2.width <= (int)( r1.width * 1.2 ) &&
-	           (int)( r2.width * 1.2 ) >= r1.width) return true;
-		if(r1.x>=r2.x&&r1.x+r1.width<=r2.x+r2.width&&r1.y>=r2.y&&r1.y+r1.height<=r2.y+r2.height) return true;
+		int distance = (int)(r1.width * 0.2);
+		/* r1.x - distance <= r2.x <= r1.x + distance
+		 * r1.y - distance <= r2.y <= r1.y + distance
+		 */
+		if(	r2.x <= r1.x + distance &&
+			r2.x >= r1.x - distance &&
+			r2.y <= r1.y + distance &&
+			r2.y >= r1.y - distance &&
+			r2.width <= (int)(r1.width * 1.2) &&
+			r1.width <= (int)(r2.width * 1.2) )
+			return true;
+		if(	r1.x>=r2.x && r1.x+r1.width<=r2.x+r2.width &&
+			r1.y>=r2.y && r1.y+r1.height<=r2.y+r2.height )
+			return true;
 		return false;
-	}*/
+	}
 }Detector;
 
 #endif

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
-#include "../mshcd.hpp"
+#include "../c/mshcd.hpp"
 using namespace cv;
 
 void GetHaarCascade(const char* filename, vector<Stage>& Stages);

@@ -14,7 +14,7 @@ $(TARGET1): $(TARGET1).cpp
 $(TARGET2): $(TARGET2).cpp
 	$(CC) $(CPPFLAGS) -o $@ $< $(LIBS)
 
-$(TARGET3): $(TARGET3).cpp ../GetHaarCascade.cpp
+$(TARGET3): $(TARGET3).cpp ../c/GetHaarCascade.cpp
 	$(CC) $(CPPFLAGS) -o $@ $+ $(LIBS)
 
 clean:
