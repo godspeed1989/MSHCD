@@ -16,9 +16,9 @@ CPP implementation in `cpp` folder<br>
 Reference
 =========
 The java implementation in `java` folder<br>
-http://code.google.com/p/jviolajones
+http://code.google.com/p/jviolajones     
 The matlab implementation in `matlab` folder<br>
-http://www.mathworks.com/matlabcentral/fileexchange/29437-viola-jones-object-detection
+http://www.mathworks.com/matlabcentral/fileexchange/29437-viola-jones-object-detection     
 The javascript implementation in `javascript` folder<br>
-https://github.com/foo123/HAAR.js
+https://github.com/foo123/HAAR.js     
 
