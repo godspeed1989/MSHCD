@@ -48,7 +48,7 @@ typedef struct Feature
 		this->has_right_val = has_right_val;
 	}
 
-	int getLeftOrRight(Image& grayImage, Image& squares,
+	int getLeftOrRight(Image& integral, Image& squares,
 						unsigned int x, unsigned int y, double scale)
 	{
 		/* Compute the area of the window.*/
@@ -61,10 +61,10 @@ typedef struct Feature
 		 * in the window. */
 	//#define GET_SUM
 	#ifdef GET_SUM
-		unsigned int total_x = grayImage.getSum(x, y, w, h);
+		unsigned int total_x = integral.getSum(x, y, w, h);
 		unsigned int total_x2 = squares.getSum(x, y, w, h);
 	#else
-		unsigned int total_x = grayImage(x+w,y+h)+grayImage(x,y)-grayImage(x+w,y)-grayImage(x,y+h);
+		unsigned int total_x = integral(x+w,y+h)+integral(x,y)-integral(x+w,y)-integral(x,y+h);
 		unsigned int total_x2 = squares(x+w,y+h)+squares(x,y)-squares(x+w,y)-squares(x,y+h);
 	#endif
 		double moy = total_x * inv_area;
@@ -84,14 +84,14 @@ typedef struct Feature
 			unsigned int RectHeight = rect.height * scale;
 			/* Add the sum of pixel values in the rectangles 
 			 * (weighted by the rectangle's weight) to the total sum */
-			rect_sum += grayImage.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
+			rect_sum += integral.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
 		#else
 			unsigned int rx1 = x + (unsigned int) (scale * rect.x);
 			unsigned int rx2 = x + (unsigned int) (scale * (rect.x+rect.width));
 			unsigned int ry1 = y + (unsigned int) (scale * rect.y);
 			unsigned int ry2 = y + (unsigned int) (scale * (rect.y+rect.height));
 			/* Add the sum of pixel values in the rectangles (weighted by the rectangle's weight) to the total sum */
-			rect_sum += (grayImage(rx2,ry2)+grayImage(rx1,ry1)-grayImage(rx1,ry2)-grayImage(rx2,ry1))*rect.weight;
+			rect_sum += (integral(rx2,ry2)+integral(rx1,ry1)-integral(rx1,ry2)-integral(rx2,ry1))*rect.weight;
 		#endif
 		}
 		double rect_sum2 = rect_sum * inv_area;

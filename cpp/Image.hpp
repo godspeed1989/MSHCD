@@ -34,6 +34,15 @@ typedef struct Image
 		if(data)
 			free(data);
 	}
+	void init(unsigned int w, unsigned int h)
+	{
+		if(data)
+			free(data);
+		this->width = w;
+		this->height = h;
+		this->data = (unsigned int*)malloc(w*h*sizeof(unsigned int));
+		assert(data);
+	}
 	int getWidth()
 	{
 		return this->width;

@@ -23,7 +23,7 @@ typedef struct Tree
 		features.push_back(f);
 	}
 
-	double getVal(Image& grayImage, Image& squares, unsigned int x, unsigned int y, double scale)
+	double getVal(Image& integral, Image& squares, unsigned int x, unsigned int y, double scale)
 	{
 		assert(!features.empty());
 		Feature& cur_node = features[0];
@@ -31,7 +31,7 @@ typedef struct Tree
 		{	
 			//cur_node.print();
 			/* Compute the feature to see if we should go to the left or right child on the node.*/
-			int where = cur_node.getLeftOrRight(grayImage, squares, x, y, scale);
+			int where = cur_node.getLeftOrRight(integral, squares, x, y, scale);
 			if(where == LEFT)
 			{
 				/* If the left child has a value, return it.*/

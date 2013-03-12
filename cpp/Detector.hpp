@@ -7,6 +7,7 @@
 #include <string.h>
 #include "Stage.hpp"
 #include "Point.hpp"
+#include "CannyPruner.hpp"
 using namespace std;
 
 int GetHaarCascade(const char* filename, vector<Stage>& Stages);
@@ -34,7 +35,7 @@ typedef struct Detector
 	 */
 	vector<Rectangle> getFaces(Image& image, double baseScale,
 	                           double scale_inc, double increment,
-	                           unsigned int min_neighbors)
+	                           unsigned int min_neighbors, int canny_pruning)
 	{
 		vector<Rectangle> objects;
 		unsigned int x, y, k;
@@ -44,7 +45,7 @@ typedef struct Detector
 		double maxScale = min((width+0.0f)/size.x, (height+0.0f)/size.y);
 			
 		printf("Computing integral image and squared integral image.\n");
-		Image grayImage(width, height);
+		Image integral(width, height);
 		Image squares(width, height);
 		for(x=0; x<width; x++)
 		{
@@ -55,7 +56,7 @@ typedef struct Detector
 				unsigned int value = image(x, y);
 				col += value;
 				col2 += value*value;
-				grayImage(x, y) = (x>0?grayImage(x-1,y):0) + col;
+				integral(x, y) = (x>0?integral(x-1,y):0) + col;
 				squares(x, y) = (x>0?squares(x-1,y):0) + col2;
 			}
 		}
@@ -67,6 +68,12 @@ typedef struct Detector
 		}*/
 		
 		printf("Start to detection...\n");
+		CannyPruner pruner;
+		if(canny_pruning)
+		{
+			printf("Get integral canny to do canny prune.\n");
+			pruner.getIntegralCanny(image);
+		}
 		/*For each scale of the detection window */
 		double scale;
 		for(scale=baseScale; scale<maxScale; scale*=scale_inc)
@@ -82,13 +89,22 @@ typedef struct Detector
 			{
 				for(y=0; y<height-h; y+=step)
 				{
+					if(canny_pruning)
+					{
+						unsigned int edges_density, d;
+						Image& canny = pruner.canny;
+						edges_density = canny(x+w,y+h)+canny(x,y)-canny(x,y+h)-canny(x+w,y);
+						d = edges_density/(w*h);
+						if( d<20 || d>100 )
+							continue;
+					}
 					bool pass = true;
 					/* Perform each stage of the detector on the window */
 					for(k=0; k<stages.size(); k++)
 					{
-						//printf("*****Stage %d\n", k+1);
+						
 						/*If one stage fails, the zone is rejected.*/
-						if(!stages[k].pass(grayImage, squares, x, y, scale))
+						if(!stages[k].pass(integral, squares, x, y, scale))
 						{
 							pass = false;
 							break;
