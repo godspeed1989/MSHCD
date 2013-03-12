@@ -6,7 +6,7 @@
 using namespace std;
 
 /**
- * A stage of the detector. Each stage consists of several trees and a threshold.
+ * Each stage consists of several trees and a threshold.
  * When using the detector on a window, each tree returns a value.
  * If the sum of these values exceeds the threshold, the stage succeeds
  * else it fails (and the window is not the object looked for).

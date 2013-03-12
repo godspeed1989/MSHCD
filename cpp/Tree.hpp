@@ -29,8 +29,7 @@ typedef struct Tree
 		Feature& cur_node = features[0];
 		while(true)
 		{	
-			//cur_node.print();
-			/* Compute the feature to see if we should go to the left or right child on the node.*/
+			/* Compute the feature to see if we should go to the left or right */
 			int where = cur_node.getLeftOrRight(integral, squares, x, y, scale);
 			if(where == LEFT)
 			{

@@ -19,6 +19,7 @@ typedef struct Tree
 {
 	Rectangle rects[3];
 	int tilted;
+	unsigned int nb_rects;
 	double threshold;
 	double left_val, right_val;
 }Tree;

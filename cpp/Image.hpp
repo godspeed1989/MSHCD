@@ -54,7 +54,6 @@ typedef struct Image
 	unsigned int getSum(unsigned int x, unsigned int y,
 						unsigned int w, unsigned int h)
 	{
-		printf("%s\n", __FUNCTION__);
 		if(x+w<width && y+h<height)
 		{
 			return	*( data+(y+h)*width+(x+w) )

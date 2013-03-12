@@ -7,7 +7,7 @@ typedef struct CannyPruner
 	Image canny;
 	/**
 	 * Compute the Canny Edge detector of an image.
-	 * @param grayImage The grayscale original image.
+	 * @grayImage The grayscale original image.
 	 */
 	void getIntegralCanny(Image& grayImage)
 	{

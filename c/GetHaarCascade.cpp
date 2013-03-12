@@ -53,12 +53,14 @@ int GetHaarCascade(const char* filename, vector<Stage>& Stages)
 					if(value == 0)
 					{
 						tree.tilted = 0;
+						tree.nb_rects = 2;
 						memset(&rect, 0, sizeof(Rectangle));
 						tree.rects[i] = rect;
 					}
 					else if(value == 3) // exist 3rd rect
 					{
 						flag = 1;
+						tree.nb_rects = 3;
 						fscanf(fin, "%d", &rect.x);
 						fscanf(fin, "%d", &rect.y);
 						fscanf(fin, "%d", &rect.width);

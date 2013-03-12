@@ -24,18 +24,18 @@ typedef struct Detector
 	}
 
 	/**
-	 * Returns the list of detected objects in an image applying the Viola-Jones algorithm.
 	 * The algorithm tests, from sliding windows on the image, of variable size, 
 	 * which regions should be considered as searched objects.
-	 * Please see Wikipedia for a description of the algorithm.
-	 * @param file The image file to scan.
-	 * @param baseScale The initial ratio between the window size and the Haar classifier size (default 2).
-	 * @param scale_inc The scale increment of the window size, at each step (default 1.25).
-	 * @param increment The shift of the window at each sub-step, in terms of percentage of the window size.
+	 * @image The image file to scan.
+	 * @baseScale The initial ratio between window size and the Haar classifier size.
+	 * @scale_inc The scale increment of the window size, at each step.
+	 * @increment The shift of the window at each sub-step, in terms of percentage of the window size.
+	 * @min_neighbors The minimum number of rectangles needed to be kept in raw result.
+	 * @return The found objects after merge.
 	 */
-	vector<Rectangle> getFaces(Image& image, double baseScale,
-	                           double scale_inc, double increment,
-	                           unsigned int min_neighbors, int canny_pruning)
+	vector<Rectangle> getObjects(Image& image, double baseScale,
+	                             double scale_inc, double increment,
+	                             unsigned int min_neighbors, int canny_pruning)
 	{
 		vector<Rectangle> objects;
 		unsigned int x, y, k;
@@ -74,17 +74,14 @@ typedef struct Detector
 			printf("Get integral canny to do canny prune.\n");
 			pruner.getIntegralCanny(image);
 		}
-		/*For each scale of the detection window */
 		double scale;
-		for(scale=baseScale; scale<maxScale; scale*=scale_inc)
+		for(scale=baseScale; scale<maxScale; scale*=scale_inc) // for each scale
 		{
-			/*Compute the sliding step of the window*/
 			int step = (int) (scale * size.x * increment);
 			unsigned int w = (scale * size.x);
 			unsigned int h = (scale * size.y);
 			printf("*****Scale %lf step %d width %d height %d ", scale, step, w, h);
-			/*For each position of the window on the image
-			  check whether the object is detected there.*/
+			/* For each position of the window on the image */
 			for(x=0; x<width-w; x+=step)
 			{
 				for(y=0; y<height-h; y+=step)
@@ -98,8 +95,8 @@ typedef struct Detector
 						if( d<20 || d>100 )
 							continue;
 					}
-					bool pass = true;
 					/* Perform each stage of the detector on the window */
+					bool pass = true;
 					for(k=0; k<stages.size(); k++)
 					{
 						
@@ -110,7 +107,6 @@ typedef struct Detector
 							break;
 						}
 					}
-					/* If the window passed all stages, add it to the results. */
 					if(pass)
 					{
 						printf("+");
@@ -125,14 +121,12 @@ typedef struct Detector
 		return merge(objects, min_neighbors);
 	}
 	
-	/** Merge the raw detections resulting from the detection step 
+	/**
+	 * Merge the raw detections resulting from the detection step 
 	 * to avoid multiple detections of the same object.
-	 * A threshold on the minimum numbers of rectangles
-	 * that need to be merged for the resulting detection to be kept can be given,
-	 * to lower the rate of false detections.
 	 * Two rectangles need to be merged if they overlap enough.
-	 * @param rects The raw detections returned by the detection algorithm.
-	 * @param min_neighbors The minimum number of rectangles needed for the corresponding detection to be kept.
+	 * @objs The raw detections returned by the detection algorithm.
+	 * @min_neighbors The minimum number of rectangles needed to be kept.
 	 * @return The merged rectangular detections.
 	 */
 	vector<Rectangle> merge(vector<Rectangle> objs, unsigned int min_neighbors)
@@ -196,19 +190,24 @@ typedef struct Detector
 	/** Returns true if two rectangles overlap */
 	bool equals(Rectangle& r1, Rectangle& r2)
 	{
-		int distance = (int)(r1.width * 0.2);
-		/* r1.x - distance <= r2.x <= r1.x + distance
-		 * r1.y - distance <= r2.y <= r1.y + distance
-		 */
-		if(	r2.x <= r1.x + distance &&
-			r2.x >= r1.x - distance &&
-			r2.y <= r1.y + distance &&
-			r2.y >= r1.y - distance &&
-			r2.width <= (int)(r1.width * 1.2) &&
-			r1.width <= (int)(r2.width * 1.2) )
+		unsigned int dist_x, dist_y;
+		dist_x = (unsigned int)(r1.width * 0.2);
+		dist_y = (unsigned int)(r1.height * 0.2);
+		/* y - distance <= x <= y + distance */
+		if(	r2.x <= r1.x + dist_x &&
+			r2.x >= r1.x - dist_x &&
+			r2.y <= r1.y + dist_y &&
+			r2.y >= r1.y - dist_y &&
+			r2.width <= r1.width + dist_x &&
+			r2.width >= r1.width - dist_x && 
+			r2.height <= r1.height + dist_y &&
+			r2.height >= r1.height - dist_y )
 			return true;
 		if(	r1.x>=r2.x && r1.x+r1.width<=r2.x+r2.width &&
 			r1.y>=r2.y && r1.y+r1.height<=r2.y+r2.height )
+			return true;
+		if(	r2.x>=r1.x && r2.x+r2.width<=r1.x+r1.width &&
+			r2.y>=r1.y && r2.y+r2.height<=r1.y+r1.height )
 			return true;
 		return false;
 	}

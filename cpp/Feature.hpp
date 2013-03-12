@@ -8,9 +8,8 @@
 #include "Image.hpp"
 using namespace std;
 /** 
- * A feature of the detector. A feature is located at a node of a tree, and returns LEFT or RIGHT depending on the comparison
- * of the computed value and a threshold. The value is computed as follows : the feature is constituted of weighted rectangles, and the value
- * is the sum of the pixels inside each rectangle, weighted by the rectangle's weight.
+ * A feature is located at a node of a tree
+ * Returns LEFT or RIGHT depending on the computed value and a threshold.
  */
 #define LEFT   0
 #define RIGHT  1
@@ -19,12 +18,9 @@ typedef struct Feature
 	Rectangle rects[3];
 	int nb_rects;
 	double threshold;
-	double left_val;
-	double right_val;
-	int left_node;
-	int right_node;
-	bool has_left_val;
-	bool has_right_val;
+	double left_val, right_val;
+	bool has_left_val, has_right_val;
+	int left_node, right_node;
 	unsigned int width, height;
 	int tilted;
 	
@@ -56,10 +52,9 @@ typedef struct Feature
 		unsigned int h = height * scale;
 		double inv_area = 1.0/(w*h);
 		
-		/* Compute the sum (and squared sum) of the pixel values in the window, 
-		 * and get the mean and variance of pixel values
-		 * in the window. */
-	//#define GET_SUM
+		/* Compute the sum of the pixel values in the window, 
+		 * get the mean and variance of pixel values */
+	#define GET_SUM
 	#ifdef GET_SUM
 		unsigned int total_x = integral.getSum(x, y, w, h);
 		unsigned int total_x2 = squares.getSum(x, y, w, h);
@@ -90,7 +85,6 @@ typedef struct Feature
 			unsigned int rx2 = x + (unsigned int) (scale * (rect.x+rect.width));
 			unsigned int ry1 = y + (unsigned int) (scale * rect.y);
 			unsigned int ry2 = y + (unsigned int) (scale * (rect.y+rect.height));
-			/* Add the sum of pixel values in the rectangles (weighted by the rectangle's weight) to the total sum */
 			rect_sum += (integral(rx2,ry2)+integral(rx1,ry1)-integral(rx1,ry2)-integral(rx2,ry1))*rect.weight;
 		#endif
 		}
