@@ -13,13 +13,17 @@ CPP implementation in `cpp` folder
 Usage for C/CPP version
 =======================
 Step 1. Generate raw grayscale image file.    
+```
 	cd ./tools    
 	make    
 	./raw imagefilename    
+```
 Step 2. Run detection.    
+```
 	cd ./c or ./cpp    
 	make    
 	./mshcd    
+```
 
 Haar cascade features data
 ==========================
@@ -28,6 +32,7 @@ And converted into C format that easy to be read in program.
 haar_alt.txt    
 haar_default.txt    
 File format:    
+```
 	sample-size1 sample-size2    
 	num-of-stages    
 	num-of-trees-at-stage-(i+1)    
@@ -42,6 +47,7 @@ File format:
 	i-stage stage_threshold    
 	num-of-trees-at-stage-(i+1)    
 	......    
+```
 
 Reference
 =========

@@ -7,13 +7,14 @@ using namespace cv;
 int main(int argc, const char* argv[])
 {
 	assert(argc>1);
-
+	
+	// read & show grayscale original image
 	Mat image = imread(argv[1], 0);
 	cout<<image.cols<<" X "<<image.rows<<endl;
 	cout<<(image.depth()==CV_8U)<<" * "<<image.channels()<<" "<<endl;
 	imshow("original", image);
 	waitKey();
-
+	// write out the `raw` image
 	FILE *fout;
 	fout = fopen("gray_img.raw", "wb");
 	fwrite(&image.cols, 4, 1, fout);
@@ -24,7 +25,7 @@ int main(int argc, const char* argv[])
 	}
 	fflush(fout);
 	fclose(fout);
-
+	// test read & show the `raw` image
 	FILE *fin;
 	int rows, cols;
 	unsigned char *ptr;
@@ -38,6 +39,7 @@ int main(int argc, const char* argv[])
 	imshow("test in", img);
 	waitKey();
 	fclose(fin);
+	
 	return 0;
 }
 

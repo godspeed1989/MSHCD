@@ -6,14 +6,14 @@
 int GetHaarCascade(const char* filename, vector<Stage>& Stages)
 {
 	FILE *fin;
-	int size;
+	unsigned int width, height;
 	unsigned int i, t, s, n_stages, n_trees;
 	unsigned int stages, trees, value, flag;
 	PRINT_FUNCTION_INFO();
 	fin = fopen(filename, "r");
 	assert(fin);
-	fscanf(fin, "%d%d", &size, &size);
-	printf("Sample size %d x %d\n", size, size);
+	fscanf(fin, "%d%d", &width, &height);
+	printf("Sample size %d x %d\n", width, height);
 	fscanf(fin, "%d", &n_stages);
 	printf("Total %d stages\n", n_stages);
 	s = 1;
@@ -104,6 +104,6 @@ int GetHaarCascade(const char* filename, vector<Stage>& Stages)
 	}
 	printf("Total features %ld\n", total_features);
 	PRINT_FUNCTION_END_INFO();
-	return size;
+	return width;
 }
 

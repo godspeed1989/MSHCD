@@ -1,8 +1,8 @@
 ##Tools
------------------------
+
 ###draw.cpp
 Draw the result of found objects.    
-	Usage: ./draw filename image
+	Usage: ./draw filename image    
 'filename' contents:    
 x1 y1 w1 h1    
 x2 y2 w2 h2    
