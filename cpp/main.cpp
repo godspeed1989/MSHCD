@@ -12,7 +12,8 @@ int main()
 	
 	fin = fopen(imagefile, "rb");
 	assert(fin);
-	fscanf(fin, "%d %d\n", &w, &h);
+	fread(&w, 4, 1, fin);
+	fread(&h, 4, 1, fin);
 	printf("%d X %d\n", w, h);
 	size = w*h;
 	data = (unsigned char*)malloc(size*sizeof(unsigned char));

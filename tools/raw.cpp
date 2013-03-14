@@ -16,7 +16,8 @@ int main(int argc, const char* argv[])
 
 	FILE *fout;
 	fout = fopen("gray_img.raw", "wb");
-	fprintf(fout, "%d %d\n", image.cols, image.rows);
+	fwrite(&image.cols, 4, 1, fout);
+	fwrite(&image.rows, 4, 1, fout);
 	for(int i=0; i<image.rows*image.cols; i++)
 	{
 		fprintf(fout, "%c", image.data[i]);
@@ -28,7 +29,8 @@ int main(int argc, const char* argv[])
 	int rows, cols;
 	unsigned char *ptr;
 	fin = fopen("gray_img.raw", "rb");
-	fscanf(fin, "%d %d\n", &cols, &rows);
+	fread(&cols, 4, 1, fin);
+	fread(&rows, 4, 1, fin);
 	cout<<cols<<" X "<<rows<<endl;
 	ptr = (unsigned char*)malloc(rows*cols);
 	fread(ptr, rows*cols, 1, fin);

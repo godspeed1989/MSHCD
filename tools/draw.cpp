@@ -27,6 +27,6 @@ int main(int argc, const char* argv[])
 	}
 	imshow("result", image);
 	waitKey();
-	
+	imwrite("result.jpg", image);
 	return 0;
 }

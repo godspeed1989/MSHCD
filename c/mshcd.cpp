@@ -36,7 +36,8 @@ void GetIntergralImages(const char* imagefile)
 	
 	fin = fopen(imagefile, "rb");
 	assert(fin);
-	fscanf(fin, "%d %d\n", &image.width, &image.height);
+	fread(&image.width, 4, 1, fin);
+	fread(&image.height, 4, 1, fin);
 	printf("%d X %d\n", image.width, image.height);
 	size = image.width*image.height;
 	image.data = (unsigned char*)malloc(size*sizeof(unsigned char));

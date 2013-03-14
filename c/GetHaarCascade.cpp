@@ -95,15 +95,15 @@ int GetHaarCascade(const char* filename, vector<Stage>& Stages)
 		printf("threshold %lf\n", stage.threshold);
 		Stages.push_back(stage);
 	}// for each stage
-	/*unsigned long total_features = 0;
+	unsigned long total_features = 0;
 	for(i=0; i<Stages.size(); i++)
 	{
-		printf("%d\t", i+1);
-		printf("%d\n", Stages[i].trees.size());
+		//printf("%d\t", i+1);
+		//printf("%d\n", Stages[i].trees.size());
 		total_features += Stages[i].trees.size();
 	}
-	printf("Total features %ld\n", total_features);*/
-	return size;
+	printf("Total features %ld\n", total_features);
 	PRINT_FUNCTION_END_INFO();
+	return size;
 }
 
