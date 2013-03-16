@@ -1,46 +1,36 @@
 #include "mshcd.hpp"
 
-static HaarCascade haarcascade;
-static Image image;
-static vector<Rectangle> objects;
-
-int GetHaarCascade(const char* filename, vector<Stage>& Stages);
-void GetIntergralImages(const char* imagefile);
-void HaarCasadeObjectDetection();
-void OneScaleObjectDetection(vector<Point> points, double Scale,
-                             unsigned int w, unsigned int h);
-double TreeObjectDetection(Tree& tree, double Scale, Point& point,
-                           unsigned int width, unsigned int height);
-void ShowDetectionResult();
-
-void mshcd(const char* imagefile, const char* haarcasadefile)
+MSHCD::MSHCD(const char* imagefile, const char* haarcasadefile)
 {
-	haarcascade.ScaleUpdate = 1.0/1.4;
+	assert(sizeof(u8) == 1);
+	assert(sizeof(u16) == 2);
+	assert(sizeof(u32) == 4);
+	assert(sizeof(u64) == 8);
+	haarcascade.ScaleUpdate = 1.0/1.2;
 	haarcascade.size1 = haarcascade.size2 =
 	GetHaarCascade(haarcasadefile, haarcascade.stages); // get classifer from file
-	printf("Trained at %d x %d\n", haarcascade.size1,haarcascade.size2);
-	GetIntergralImages(imagefile);  // calculate intergral image
+	GetIntergralImages(imagefile);  // calculate integral image
+	GetIntegralCanny();             // calculate integral canny image
 	HaarCasadeObjectDetection();    // start detection
-	ShowDetectionResult();          // show detection result
+	PrintDetectionResult();         // show detection result
 }
 
 /**
  * calculate intergral image from original gray-level image
  */
-void GetIntergralImages(const char* imagefile)
+void MSHCD::GetIntergralImages(const char* imagefile)
 {
 	FILE *fin;
-	unsigned int i, j;
-	unsigned long size;
+	u32 i, j, size;
 	PRINT_FUNCTION_INFO();
-	
+	// read grayscale image data from raw image
 	fin = fopen(imagefile, "rb");
 	assert(fin);
 	fread(&image.width, 4, 1, fin);
 	fread(&image.height, 4, 1, fin);
 	printf("%d X %d\n", image.width, image.height);
 	size = image.width*image.height;
-	image.data = (unsigned char*)malloc(size*sizeof(unsigned char));
+	image.data = (u8*)malloc(size*sizeof(u8));
 	fread(image.data, image.width*image.height, 1, fin);
 	fclose(fin);
 	
@@ -54,17 +44,17 @@ void GetIntergralImages(const char* imagefile)
 		double col2 = 0.0;
 		for(j=0; j<image.height; j++)
 		{
-			unsigned int idx = j*image.width + i;
-			unsigned char value = *(image.data + idx);	
+			u32 idx = j*image.width + i;
+			u8 value = *(image.data + idx);	
 			col += value;
 			col2 += value*value;
 			if(i>0)
 			{
-				*(image.idata1+idx) = *(image.idata1+j*image.width+i-1);
-				*(image.idata2+idx) = *(image.idata2+j*image.width+i-1);
+				*(image.idata1 + idx) = *(image.idata1 + idx - 1);
+				*(image.idata2 + idx) = *(image.idata2 + idx - 1);
 			}
-			*(image.idata1+idx) += col;
-			*(image.idata2+idx) += col2;
+			*(image.idata1 + idx) += col;
+			*(image.idata2 + idx) += col2;
 		}
 	}
 	/*for(i=0; i<10; i++)
@@ -79,10 +69,10 @@ void GetIntergralImages(const char* imagefile)
 /**
  * Dectect object use Multi-scale Haar cascade classifier
  */
-void HaarCasadeObjectDetection()
+void MSHCD::HaarCasadeObjectDetection()
 {
 	double Scale, StartScale, ScaleWidth, ScaleHeight;
-	unsigned int i, itt, x, y, width, height, step;
+	u32 i, itt, x, y, width, height, step;
 	PRINT_FUNCTION_INFO();
 	// get start scale
 	ScaleWidth = image.width/haarcascade.size1;
@@ -92,7 +82,7 @@ void HaarCasadeObjectDetection()
 	else
 		StartScale = ScaleWidth;
 	printf("StartScale = %lf\n", StartScale);
-	itt = (unsigned int)ceil(log(1.0/StartScale)/log(haarcascade.ScaleUpdate));
+	itt = (u32)ceil(log(1.0/StartScale)/log(haarcascade.ScaleUpdate));
 	printf("Total itt = %lf / %lf = %d\n", \
 			log(1.0/StartScale), log(haarcascade.ScaleUpdate), itt);
 	printf("Start iteration.....\n");
@@ -102,8 +92,8 @@ void HaarCasadeObjectDetection()
 		Scale = StartScale * pow(haarcascade.ScaleUpdate, i);
 		step = (Scale>2.0) ? Scale : 2.0;
 		printf("scale %lf step %d ", Scale, step);
-		width = (unsigned int)(haarcascade.size1*Scale);
-		height = (unsigned int)(haarcascade.size2*Scale);
+		width = (u32)(haarcascade.size1*Scale);
+		height = (u32)(haarcascade.size2*Scale);
 		printf("width %d height %d\n", width, height);
 		// Make vectors with all search image coordinates 
 		Point point;
@@ -114,6 +104,15 @@ void HaarCasadeObjectDetection()
 		{
 			for(y=0; y<image.height-height; y+=step)
 			{
+				if(1)
+				{
+					u32 edges_density, d;
+					edges_density = image(CANNY,x+width,y+height)+image(CANNY,x,y)-
+									image(CANNY,x,y+height)-image(CANNY,x+width,y);
+					d = edges_density/(width*height);
+					if( d<20 || d>100 )
+						continue;
+				}
 				point.x = x, point.y = y;
 				points.push_back(point);
 			}
@@ -124,14 +123,12 @@ void HaarCasadeObjectDetection()
 	PRINT_FUNCTION_END_INFO();
 }
 
-double GetSumRect(int type,
-                  unsigned int x, unsigned int y,
-                  unsigned int w, unsigned int h)
+double MSHCD::GetSumRect(u8 type, u32 x, u32 y, u32 w, u32 h)
 {
 	if(w==0 || h==0)
 		return 0;
 	w--; h--;
-	//DPRINTF("(%d %d) %d %d\n", x, y, w, h);
+	//printf("(%d %d) %d %d\n", x, y, w, h);
 	assert(x+w<image.width && y+h<image.height);
 	if(type == II1)
 		return	*( image.idata1+(y+h)*image.width+(x+w) )
@@ -150,25 +147,25 @@ double GetSumRect(int type,
 /**
  * detect the object at a fixed scale, fixed width, fixed height
  */
-void OneScaleObjectDetection(vector<Point> points, double Scale,
-                             unsigned int width, unsigned int height)
+void MSHCD::OneScaleObjectDetection(vector<Point> points, double Scale,
+                                    u32 width, u32 height)
 {
-	unsigned int i, i_stage, i_tree, max;
+	u32 i, i_stage, i_tree, max;
 	//PRINT_FUNCTION_INFO();
 	printf("*****Total %d rects to find\n", points.size());
 	max = 0;
 	for(i=0; i<points.size(); i++)
 	{
-		int pass = 1;
+		u8 pass = 1;
 		for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
 		{
-			//DPRINTF("----Stage %d----", i_stage);
+			DPRINTF("----Stage %d----", i_stage);
 			Stage &stage = haarcascade.stages[i_stage];
 			double StageSum =  0.0;
 			for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
 			{
 				Tree &tree = stage.trees[i_tree];
-				//DPRINTF("----Tree %d----\n", i_tree);
+				DPRINTF("----Tree %d----\n", i_tree);
 				StageSum += TreeObjectDetection(tree, Scale, points[i], width, height);
 			}
 			if(StageSum > stage.threshold)
@@ -198,10 +195,10 @@ void OneScaleObjectDetection(vector<Point> points, double Scale,
 /**
  * get the current haar-classifier's value (left/right)
  */
-double TreeObjectDetection(Tree& tree, double Scale, Point& point,
-                           unsigned int width, unsigned int height)
+double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
+                                  u32 width, u32 height)
 {
-	unsigned int i_rect, x, y;
+	u32 i_rect, x, y;
 	double InverseArea;
 	double total_x, total_x2, moy, vnorm;
 	double Rectangle_sum;
@@ -228,18 +225,18 @@ double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 	for(i_rect=0; i_rect<3; i_rect++)
 	{
 		Rectangle &rect = tree.rects[i_rect];
-		//DPRINTF("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
+		//printf("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
 	#ifdef GET_SUM
-		unsigned int RectX = rect.x * Scale + x;
-		unsigned int RectY = rect.y * Scale + y;
-		unsigned int RectWidth = rect.width * Scale;
-		unsigned int RectHeight = rect.height * Scale;
+		u32 RectX = rect.x * Scale + x;
+		u32 RectY = rect.y * Scale + y;
+		u32 RectWidth = rect.width * Scale;
+		u32 RectHeight = rect.height * Scale;
 		Rectangle_sum += GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) * rect.weight;
 	#else
-		unsigned int rx1 = x + (unsigned int) (Scale * rect.x);
-		unsigned int rx2 = x + (unsigned int) (Scale * (rect.x+rect.width));
-		unsigned int ry1 = y + (unsigned int) (Scale * rect.y);
-		unsigned int ry2 = y + (unsigned int) (Scale * (rect.y+rect.height));
+		u32 rx1 = x + (u32) (Scale * rect.x);
+		u32 rx2 = x + (u32) (Scale * (rect.x+rect.width));
+		u32 ry1 = y + (u32) (Scale * rect.y);
+		u32 ry2 = y + (u32) (Scale * (rect.y+rect.height));
 		Rectangle_sum += (image(II1, rx2, ry2) + image(II1, rx1, ry1)
 						- image(II1, rx2, ry1) - image(II1, rx1, ry2)) * rect.weight;
 	#endif
@@ -251,10 +248,75 @@ double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 		return tree.right_val;
 }
 
-void ShowDetectionResult()
+void MSHCD::GetIntegralCanny()
+{
+	u32 i, j;
+	u32 sum;
+	image.cdata = (double*)malloc(image.width*image.height*(sizeof(double)));
+	for(i=2; i<image.width-2; i++)
+	{
+		for(j=2; j<image.height-2; j++)
+		{
+			sum = 0;
+			sum += 2  * image(i-2, j-2);
+			sum += 4  * image(i-2, j-1);
+			sum += 5  * image(i-2, j+0);
+			sum += 4  * image(i-2, j+1);
+			sum += 2  * image(i-2, j+2);
+			sum += 4  * image(i-1, j-2);
+			sum += 9  * image(i-1, j-1);
+			sum += 12 * image(i-1, j+0);
+			sum += 9  * image(i-1, j+1);
+			sum += 4  * image(i-1, j+2);
+			sum += 5  * image(i+0, j-2);
+			sum += 12 * image(i+0, j-1);
+			sum += 15 * image(i+0, j+0);
+			sum += 12 * image(i+0, j+1);
+			sum += 5  * image(i+0, j+2);
+			sum += 4  * image(i+1, j-2);
+			sum += 9  * image(i+1, j-1);
+			sum += 12 * image(i+1, j+0);
+			sum += 9  * image(i+1, j+1);
+			sum += 4  * image(i+1, j+2);
+			sum += 2  * image(i+2, j-2);
+			sum += 4  * image(i+2, j-1);
+			sum += 5  * image(i+2, j+0);
+			sum += 4  * image(i+2, j+1);
+			sum += 2  * image(i+2, j+2);
+			image(CANNY, i, j) = sum / 159;
+		}
+	}
+	/*Computation of the discrete gradient of the image.*/
+	u32 *grad = (u32*)malloc(image.width*image.height*(sizeof(u32)));
+	for(i=1; i<image.width-1; i++)
+	{
+		for(j=1; j<image.height-1; j++)
+		{
+			u32 grad_x, grad_y;
+			grad_x = -image(CANNY,i-1,j-1)+image(CANNY,i+1,j-1)-2*image(CANNY,i-1,j)+
+					2*image(CANNY,i+1,j)-image(CANNY,i-1,j+1)+image(CANNY,i+1,j+1);
+			grad_y = image(CANNY,i-1,j-1)+2*image(CANNY,i,j-1)+image(CANNY,i+1,j-1)-
+					image(CANNY,i-1,j+1)-2*image(CANNY,i,j+1)-image(CANNY,i+1,j+1);
+			*(grad+j*image.width+i) = abs(grad_x) + abs(grad_y);
+		}
+	}
+	/* Suppression of non-maxima of the gradient and computation of the integral Canny image. */
+	for(i=0; i<image.width; i++)
+	{
+		u32 col=0;
+		for(j=0; j<image.height; j++)
+		{
+			col += *(grad+j*image.width+i);
+			image(CANNY, i, j) = (i>0?image(CANNY, i-1,j):0) + col;
+		}
+	}
+	free(grad);
+}
+
+void MSHCD::PrintDetectionResult()
 {
 	FILE *fout;
-	unsigned int i_obj;
+	u32 i_obj;
 	PRINT_FUNCTION_INFO();
 	printf("Total %d object(s) found\n", objects.size());
 	fout = fopen("result.txt", "w");
@@ -265,11 +327,5 @@ void ShowDetectionResult()
 	}
 	fclose(fout);
 	PRINT_FUNCTION_END_INFO();
-}
-
-int main()
-{
-	mshcd("../tools/gray_img.raw", "../haar_alt.txt");
-	return 0;
 }
 

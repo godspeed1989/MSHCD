@@ -6,9 +6,9 @@
 int GetHaarCascade(const char* filename, vector<Stage>& Stages)
 {
 	FILE *fin;
-	unsigned int width, height;
-	unsigned int i, t, s, n_stages, n_trees;
-	unsigned int stages, trees, value, flag;
+	u32 width, height;
+	u32 i, t, s, n_stages, n_trees;
+	u32 stages, trees, value, flag;
 	PRINT_FUNCTION_INFO();
 	fin = fopen(filename, "r");
 	assert(fin);
@@ -21,7 +21,7 @@ int GetHaarCascade(const char* filename, vector<Stage>& Stages)
 	{
 		Stage stage;
 		fscanf(fin, "%d", &n_trees); // num of trees per stage
-		printf("Stage %d num_tree %d ", s, n_trees);
+		//printf("Stage %d num_tree %d ", s, n_trees);
 		t = 1;
 		while(t <= n_trees && !feof(fin))  // get each tree
 		{
@@ -92,17 +92,17 @@ int GetHaarCascade(const char* filename, vector<Stage>& Stages)
 		s++;
 		assert(stage.trees.size() == trees);
 		fscanf(fin, "%d %lf", &stages, &stage.threshold); // get threshold of stage
-		printf("threshold %lf\n", stage.threshold);
+		//printf("threshold %lf\n", stage.threshold);
 		Stages.push_back(stage);
 	}// for each stage
-	unsigned long total_features = 0;
+	u32 total_features = 0;
 	for(i=0; i<Stages.size(); i++)
 	{
 		//printf("%d\t", i+1);
 		//printf("%d\n", Stages[i].trees.size());
 		total_features += Stages[i].trees.size();
 	}
-	printf("Total features %ld\n", total_features);
+	printf("Total features %d\n", total_features);
 	PRINT_FUNCTION_END_INFO();
 	return width;
 }

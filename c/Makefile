@@ -1,11 +1,11 @@
 CC=g++
 TARGET=mshcd
 CFLAGS = -Wall
-CFLAGS+= -g -DDEBUG
+CFLAGS+= -g
 
 all: $(TARGET)
 
-$(TARGET): $(TARGET).cpp GetHaarCascade.cpp
+$(TARGET): $(TARGET).cpp GetHaarCascade.cpp main.cpp
 	$(CC) $(CFLAGS) -o $@ $+
 
 clean:
