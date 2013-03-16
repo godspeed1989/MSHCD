@@ -1,12 +1,13 @@
 #ifndef __RECT_H__
 #define __RECT_H__
 #include <stdio.h>
+#include "mshcd.hpp"
 /**
  * A simple class describing a rectangle, along with a weight.
  */
 typedef struct Rectangle
 {
-	unsigned int x, y, width, height;
+	u32 x, y, width, height;
 	double weight;
 	Rectangle()
 	{
@@ -16,7 +17,7 @@ typedef struct Rectangle
 		this->height = 0;
 		this->weight = 0;
 	}
-	Rectangle(int x, int y, int width, int height, double weight)
+	Rectangle(u32 x, u32 y, u32 width, u32 height, double weight)
 	{
 		this->x = x;
 		this->y = y;

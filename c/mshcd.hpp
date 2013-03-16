@@ -9,6 +9,8 @@
 #include <vector>
 using namespace std;
 
+#define TRUE  1
+#define FALSE 0
 typedef unsigned char           u8;
 typedef unsigned short          u16;
 typedef unsigned int            u32;
@@ -47,14 +49,14 @@ typedef struct Image
 {
 	u32 width, height;
 	u8* data;
-	double *idata1;
-	double *idata2;
-	double *cdata;
+	u32 *idata1;
+	u32 *idata2;
+	u32 *cdata;
 	u8& operator () (u32 x, u32 y)
 	{
 		return *(data + y*width + x);
 	}
-	double& operator () (u8 type, u32 x, u32 y)
+	u32& operator () (u8 type, u32 x, u32 y)
 	{
 		assert(x<width && y<height);
 		if(type == II1)
@@ -63,6 +65,7 @@ typedef struct Image
 			return *(idata2 + y*width + x);
 		if(type == CANNY)
 			return *(cdata + y*width + x);
+		return *(idata1 + y*width + x);
 	}
 }Image;
 
@@ -80,7 +83,7 @@ typedef struct Point
 #define DPRINTF(args...)
 #endif
 
-extern int GetHaarCascade(const char* filename, vector<Stage>& Stages);
+extern u32 GetHaarCascade(const char* filename, vector<Stage>& Stages);
 
 typedef struct MSHCD
 {
@@ -95,6 +98,7 @@ typedef struct MSHCD
 	double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 		                       u32 width, u32 height);
 	void PrintDetectionResult();
+	vector<Rectangle> merge(vector<Rectangle> objs, u32 min_neighbors);
 	void GetIntegralCanny();
 	double GetSumRect(u8 type, u32 x, u32 y, u32 w, u32 h);
 }MSHCD;

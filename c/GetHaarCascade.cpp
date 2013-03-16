@@ -3,7 +3,7 @@
 /**
  * get Haar Cascade classifier from file
  */
-int GetHaarCascade(const char* filename, vector<Stage>& Stages)
+u32 GetHaarCascade(const char* filename, vector<Stage>& Stages)
 {
 	FILE *fin;
 	u32 width, height;

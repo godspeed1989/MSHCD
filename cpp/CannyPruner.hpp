@@ -1,6 +1,7 @@
 #ifndef __CANNY_PRUNER_H__
 #define __CANNY_PRUNER_H__
 #include "Image.hpp"
+#include "mshcd.hpp"
 
 typedef struct CannyPruner
 {
@@ -11,8 +12,8 @@ typedef struct CannyPruner
 	 */
 	void getIntegralCanny(Image& grayImage)
 	{
-		unsigned int i, j;
-		unsigned long sum;
+		u32 i, j;
+		u32 sum;
 		canny.init(grayImage.width, grayImage.height);
 		for(i=2; i<canny.width-2; i++)
 		{
@@ -53,7 +54,7 @@ typedef struct CannyPruner
 		{
 			for(j=1; j<canny.height-1; j++)
 			{
-				unsigned int grad_x, grad_y;
+				u32 grad_x, grad_y;
 				grad_x =-canny(i-1,j-1)+canny(i+1,j-1)-2*canny(i-1,j)+2*canny(i+1,j)-canny(i-1,j+1)+canny(i+1,j+1);
 				grad_y = canny(i-1,j-1)+2*canny(i,j-1)+canny(i+1,j-1)-canny(i-1,j+1)-2*canny(i,j+1)-canny(i+1,j+1);
 				grad(i, j) = abs(grad_x) + abs(grad_y);
@@ -62,7 +63,7 @@ typedef struct CannyPruner
 		/* Suppression of non-maxima of the gradient and computation of the integral Canny image. */
 		for(i=0; i<canny.width; i++)
 		{
-			unsigned int col=0;
+			u32 col=0;
 			for(j=0; j<canny.height; j++)
 			{
 				col += grad(i, j);

@@ -1,14 +1,15 @@
 #include "Detector.hpp"
 #include <stdio.h>
+#include "mshcd.hpp"
 
 int main()
 {
 	const char * imagefile = "../tools/gray_img.raw";
 	const char * cascadefile = "../haar_alt.txt";
 	FILE *fin, *fout;
-	unsigned int w, h;
-	unsigned char* data;
-	unsigned long i, size;
+	u32 w, h;
+	u8* data;
+	u32 i, size;
 	
 	fin = fopen(imagefile, "rb");
 	assert(fin);
@@ -16,14 +17,14 @@ int main()
 	fread(&h, 4, 1, fin);
 	printf("%d X %d\n", w, h);
 	size = w*h;
-	data = (unsigned char*)malloc(size*sizeof(unsigned char));
+	data = (u8*)malloc(size*sizeof(u8));
 	fread(data, size, 1, fin);
 	fclose(fin);
 	
 	Image image(w,h);
 	for(i=0; i<size; i++)
 	{
-		image.data[i] = (unsigned int)data[i];
+		image.data[i] = (u32)data[i];
 	}
 	free(data);
 	

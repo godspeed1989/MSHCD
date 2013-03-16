@@ -6,6 +6,7 @@
 #include "Rectangle.hpp"
 #include "Point.hpp"
 #include "Image.hpp"
+#include "mshcd.hpp"
 using namespace std;
 /** 
  * A feature is located at a node of a tree
@@ -16,13 +17,13 @@ using namespace std;
 typedef struct Feature
 {
 	Rectangle rects[3];
-	int nb_rects;
+	u32 nb_rects;
 	double threshold;
 	double left_val, right_val;
 	bool has_left_val, has_right_val;
-	int left_node, right_node;
-	unsigned int width, height;
-	int tilted;
+	u32 left_node, right_node;
+	u32 width, height;
+	u32 tilted;
 	
 	Feature()
 	{
@@ -31,8 +32,8 @@ typedef struct Feature
 		has_left_val = has_right_val = false;
 	}
 	Feature(double threshold,
-			double left_val, int left_node, bool has_left_val,
-			double right_val, int right_node, bool has_right_val)
+			double left_val, u32 left_node, bool has_left_val,
+			double right_val, u32 right_node, bool has_right_val)
 	{
 		width = height = nb_rects = 0;
 		this->threshold = threshold;
@@ -44,23 +45,23 @@ typedef struct Feature
 		this->has_right_val = has_right_val;
 	}
 
-	int getLeftOrRight(Image& integral, Image& squares,
-						unsigned int x, unsigned int y, double scale)
+	u32 getLeftOrRight(Image& integral, Image& squares,
+						u32 x, u32 y, double scale)
 	{
 		/* Compute the area of the window.*/
-		unsigned int w = width * scale;
-		unsigned int h = height * scale;
+		u32 w = width * scale;
+		u32 h = height * scale;
 		double inv_area = 1.0/(w*h);
 		
 		/* Compute the sum of the pixel values in the window, 
 		 * get the mean and variance of pixel values */
 	#define GET_SUM
 	#ifdef GET_SUM
-		unsigned int total_x = integral.getSum(x, y, w, h);
-		unsigned int total_x2 = squares.getSum(x, y, w, h);
+		u32 total_x = integral.getSum(x, y, w, h);
+		u32 total_x2 = squares.getSum(x, y, w, h);
 	#else
-		unsigned int total_x = integral(x+w,y+h)+integral(x,y)-integral(x+w,y)-integral(x,y+h);
-		unsigned int total_x2 = squares(x+w,y+h)+squares(x,y)-squares(x+w,y)-squares(x,y+h);
+		u32 total_x = integral(x+w,y+h)+integral(x,y)-integral(x+w,y)-integral(x,y+h);
+		u32 total_x2 = squares(x+w,y+h)+squares(x,y)-squares(x+w,y)-squares(x,y+h);
 	#endif
 		double moy = total_x * inv_area;
 		double vnorm = total_x2 * inv_area - moy * moy;
@@ -68,23 +69,23 @@ typedef struct Feature
 
 		double rect_sum = 0;
 		/* For each rectangle in the feature. */
-		for(int k=0; k<nb_rects; k++)
+		for(u32 k=0; k<nb_rects; k++)
 		{
 			Rectangle& rect = this->rects[k];
 			/* Scale the rectangle according to the window size. */
 		#ifdef GET_SUM
-			unsigned int RectX = rect.x * scale + x;
-			unsigned int RectY = rect.y * scale + y;
-			unsigned int RectWidth = rect.width * scale;
-			unsigned int RectHeight = rect.height * scale;
+			u32 RectX = rect.x * scale + x;
+			u32 RectY = rect.y * scale + y;
+			u32 RectWidth = rect.width * scale;
+			u32 RectHeight = rect.height * scale;
 			/* Add the sum of pixel values in the rectangles 
 			 * (weighted by the rectangle's weight) to the total sum */
 			rect_sum += integral.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
 		#else
-			unsigned int rx1 = x + (unsigned int) (scale * rect.x);
-			unsigned int rx2 = x + (unsigned int) (scale * (rect.x+rect.width));
-			unsigned int ry1 = y + (unsigned int) (scale * rect.y);
-			unsigned int ry2 = y + (unsigned int) (scale * (rect.y+rect.height));
+			u32 rx1 = x + (u32) (scale * rect.x);
+			u32 rx2 = x + (u32) (scale * (rect.x+rect.width));
+			u32 ry1 = y + (u32) (scale * rect.y);
+			u32 ry2 = y + (u32) (scale * (rect.y+rect.height));
 			rect_sum += (integral(rx2,ry2)+integral(rx1,ry1)-integral(rx1,ry2)-integral(rx2,ry1))*rect.weight;
 		#endif
 		}

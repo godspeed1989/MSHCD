@@ -1,6 +1,5 @@
 #ifndef __DETECTOR_H__
 #define __DETECTOR_H__
-
 #include <vector>
 #include <math.h>
 #include <stdio.h>
@@ -8,9 +7,10 @@
 #include "Stage.hpp"
 #include "Point.hpp"
 #include "CannyPruner.hpp"
+#include "mshcd.hpp"
 using namespace std;
 
-int GetHaarCascade(const char* filename, vector<Stage>& Stages);
+u32 GetHaarCascade(const char* filename, vector<Stage>& Stages);
 
 typedef struct Detector
 {
@@ -35,12 +35,12 @@ typedef struct Detector
 	 */
 	vector<Rectangle> getObjects(Image& image, double baseScale,
 	                             double scale_inc, double increment,
-	                             unsigned int min_neighbors, int canny_pruning)
+	                             u32 min_neighbors, u8 canny_pruning)
 	{
 		vector<Rectangle> objects;
-		unsigned int x, y, k;
-		unsigned int width = image.getWidth();
-		unsigned int height = image.getHeight();
+		u32 x, y, k;
+		u32 width = image.getWidth();
+		u32 height = image.getHeight();
 		/* Compute the max scale of the detector, i.e. the size of the image divided by the size of the detector. */
 		double maxScale = min((width+0.0f)/size.x, (height+0.0f)/size.y);
 			
@@ -49,11 +49,11 @@ typedef struct Detector
 		Image squares(width, height);
 		for(x=0; x<width; x++)
 		{
-			unsigned int col = 0;
-			unsigned int col2 = 0;
+			u32 col = 0;
+			u32 col2 = 0;
 			for(y=0; y<height; y++)
 			{
-				unsigned int value = image(x, y);
+				u32 value = image(x, y);
 				col += value;
 				col2 += value*value;
 				integral(x, y) = (x>0?integral(x-1,y):0) + col;
@@ -77,9 +77,9 @@ typedef struct Detector
 		double scale;
 		for(scale=baseScale; scale<maxScale; scale*=scale_inc) // for each scale
 		{
-			int step = (int) (scale * size.x * increment);
-			unsigned int w = (scale * size.x);
-			unsigned int h = (scale * size.y);
+			u32 step = (u32) (scale * size.x * increment);
+			u32 w = (scale * size.x);
+			u32 h = (scale * size.y);
 			printf("*****Scale %lf step %d width %d height %d ", scale, step, w, h);
 			/* For each position of the window on the image */
 			for(x=0; x<width-w; x+=step)
@@ -88,7 +88,7 @@ typedef struct Detector
 				{
 					if(canny_pruning)
 					{
-						unsigned int edges_density, d;
+						u32 edges_density, d;
 						Image& canny = pruner.canny;
 						edges_density = canny(x+w,y+h)+canny(x,y)-canny(x,y+h)-canny(x+w,y);
 						d = edges_density/(w*h);
@@ -129,16 +129,16 @@ typedef struct Detector
 	 * @min_neighbors The minimum number of rectangles needed to be kept.
 	 * @return The merged rectangular detections.
 	 */
-	vector<Rectangle> merge(vector<Rectangle> objs, unsigned int min_neighbors)
+	vector<Rectangle> merge(vector<Rectangle> objs, u32 min_neighbors)
 	{
 		vector<Rectangle> ret;
-		int *mark = new int[objs.size()];
-		int nb_classes = 0;
+		u32 *mark = new u32[objs.size()];
+		u32 nb_classes = 0;
 		/* mark each rectangle with a class number */
-		for(unsigned int i=0; i<objs.size(); i++)
+		for(u32 i=0; i<objs.size(); i++)
 		{
 			bool found = false;
-			for(unsigned int j=0; j<i; j++)
+			for(u32 j=0; j<i; j++)
 			{
 				if(equals(objs[i], objs[j]))
 				{
@@ -152,15 +152,15 @@ typedef struct Detector
 				nb_classes++;
 			}
 		}
-		unsigned int *neighbors = new unsigned int[nb_classes];
+		u32 *neighbors = new u32[nb_classes];
 		Rectangle *rects = new Rectangle[nb_classes];
-		for(int i=0; i<nb_classes; i++)
+		for(u32 i=0; i<nb_classes; i++)
 		{
 			neighbors[i] = 0;
 			rects[i].x = rects[i].y = rects[i].width = rects[i].height = 0;
 		}
 		/* calculate number of rects of each class */
-		for(unsigned int i=0; i<objs.size(); i++)
+		for(u32 i=0; i<objs.size(); i++)
 		{
 			neighbors[mark[i]]++;
 			rects[mark[i]].x += objs[i].x;
@@ -168,9 +168,9 @@ typedef struct Detector
 			rects[mark[i]].width += objs[i].width;
 			rects[mark[i]].height += objs[i].height;
 		}
-		for(int i=0; i<nb_classes; i++)
+		for(u32 i=0; i<nb_classes; i++)
 		{
-			unsigned int n = neighbors[i];
+			u32 n = neighbors[i];
 			if(n >= min_neighbors)
 			{
 				Rectangle r;
@@ -181,27 +181,25 @@ typedef struct Detector
 				ret.push_back(r);
 			}
 		}
-        delete []mark;
-        delete []neighbors;
-        delete []rects;
+		delete []mark;
+		delete []neighbors;
+		delete []rects;
 		return ret;
 	}
 	
 	/** Returns true if two rectangles overlap */
 	bool equals(Rectangle& r1, Rectangle& r2)
 	{
-		unsigned int dist_x, dist_y;
-		dist_x = (unsigned int)(r1.width * 0.2);
-		dist_y = (unsigned int)(r1.height * 0.2);
+		u32 dist_x, dist_y;
+		dist_x = (u32)(r1.width * 0.2);
+		dist_y = (u32)(r1.height * 0.2);
 		/* y - distance <= x <= y + distance */
 		if(	r2.x <= r1.x + dist_x &&
 			r2.x >= r1.x - dist_x &&
 			r2.y <= r1.y + dist_y &&
 			r2.y >= r1.y - dist_y &&
-			r2.width <= r1.width + dist_x &&
-			r2.width >= r1.width - dist_x && 
-			r2.height <= r1.height + dist_y &&
-			r2.height >= r1.height - dist_y )
+			(r2.width <= r1.width + dist_x || r2.width >= r1.width - dist_x) && 
+			(r2.height <= r1.height + dist_y || r2.height >= r1.height - dist_y) )
 			return true;
 		if(	r1.x>=r2.x && r1.x+r1.width<=r2.x+r2.width &&
 			r1.y>=r2.y && r1.y+r1.height<=r2.y+r2.height )

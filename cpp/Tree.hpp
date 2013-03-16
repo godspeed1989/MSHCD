@@ -1,11 +1,11 @@
 #ifndef __TREE_H__
 #define __TREE_H__
-
 #include <vector>
 #include <math.h>
 #include <assert.h>
 #include "Feature.hpp"
 #include "Image.hpp"
+#include "mshcd.hpp"
 using namespace std;
 
 /** 
@@ -23,14 +23,14 @@ typedef struct Tree
 		features.push_back(f);
 	}
 
-	double getVal(Image& integral, Image& squares, unsigned int x, unsigned int y, double scale)
+	double getVal(Image& integral, Image& squares, u32 x, u32 y, double scale)
 	{
 		assert(!features.empty());
 		Feature& cur_node = features[0];
 		while(true)
 		{	
 			/* Compute the feature to see if we should go to the left or right */
-			int where = cur_node.getLeftOrRight(integral, squares, x, y, scale);
+			u32 where = cur_node.getLeftOrRight(integral, squares, x, y, scale);
 			if(where == LEFT)
 			{
 				/* If the left child has a value, return it.*/

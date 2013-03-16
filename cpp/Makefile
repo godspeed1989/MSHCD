@@ -5,7 +5,7 @@ TARGET=mshcd
 all: $(TARGET)
 
 main.o: main.cpp Detector.hpp Stage.hpp Tree.hpp Feature.hpp Rectangle.hpp \
- Point.hpp Image.hpp CannyPruner.hpp
+ Point.hpp Image.hpp CannyPruner.hpp mshcd.hpp
 
 
 $(TARGET): main.o GetHaarCascade.cpp

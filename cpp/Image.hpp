@@ -4,28 +4,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "mshcd.hpp"
 
 typedef struct Image
 {
-	unsigned int *data;
-	unsigned int width, height;
+	u32 *data;
+	u32 width, height;
 	Image()
 	{
 		this->width = this->height = 0;
 		this->data = NULL;
 	}
-	Image(unsigned int w, unsigned int h)
+	Image(u32 w, u32 h)
 	{
 		this->width = w;
 		this->height = h;
-		this->data = (unsigned int*)malloc(w*h*sizeof(unsigned int));
+		this->data = (u32*)malloc(w*h*sizeof(u32));
 		assert(this->data);
 	}
 	Image(Image& image)
 	{
 		this->width = image.width;
 		this->height = image.height;
-		this->data = (unsigned int*)malloc(image.width*image.height*sizeof(unsigned int));
+		this->data = (u32*)malloc(image.width*image.height*sizeof(u32));
 		assert(this->data);
 		memcpy(this->data, image.data, image.width*image.height);
 	}
@@ -34,25 +35,25 @@ typedef struct Image
 		if(data)
 			free(data);
 	}
-	void init(unsigned int w, unsigned int h)
+	void init(u32 w, u32 h)
 	{
 		if(data)
 			free(data);
 		this->width = w;
 		this->height = h;
-		this->data = (unsigned int*)malloc(w*h*sizeof(unsigned int));
+		this->data = (u32*)malloc(w*h*sizeof(u32));
 		assert(data);
 	}
-	int getWidth()
+	u32 getWidth()
 	{
 		return this->width;
 	}
-	int getHeight()
+	u32 getHeight()
 	{
 		return this->height;
 	}
-	unsigned int getSum(unsigned int x, unsigned int y,
-						unsigned int w, unsigned int h)
+	u32 getSum(u32 x, u32 y,
+						u32 w, u32 h)
 	{
 		if(x+w<width && y+h<height)
 		{
@@ -68,7 +69,7 @@ typedef struct Image
 			assert(0);
 		}
 	}
-	unsigned int& operator () (unsigned int x, unsigned int y)
+	u32& operator () (u32 x, u32 y)
 	{
 		assert(data);
 		assert(x<width && y<height);

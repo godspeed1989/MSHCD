@@ -6,12 +6,13 @@ MSHCD::MSHCD(const char* imagefile, const char* haarcasadefile)
 	assert(sizeof(u16) == 2);
 	assert(sizeof(u32) == 4);
 	assert(sizeof(u64) == 8);
-	haarcascade.ScaleUpdate = 1.0/1.2;
+	haarcascade.ScaleUpdate = 1.0/1.3;
 	haarcascade.size1 = haarcascade.size2 =
 	GetHaarCascade(haarcasadefile, haarcascade.stages); // get classifer from file
 	GetIntergralImages(imagefile);  // calculate integral image
 	GetIntegralCanny();             // calculate integral canny image
 	HaarCasadeObjectDetection();    // start detection
+	objects = merge(objects, 1);    // merge found results
 	PrintDetectionResult();         // show detection result
 }
 
@@ -34,14 +35,14 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 	fread(image.data, image.width*image.height, 1, fin);
 	fclose(fin);
 	
-	image.idata1 = (double*)malloc(size*sizeof(double));
-	memset(image.idata1, 0, size*sizeof(double));
-	image.idata2 = (double*)malloc(size*sizeof(double));
-	memset(image.idata2, 0, size*sizeof(double));
+	image.idata1 = (u32*)malloc(size*sizeof(u32));
+	memset(image.idata1, 0, size*sizeof(u32));
+	image.idata2 = (u32*)malloc(size*sizeof(u32));
+	memset(image.idata2, 0, size*sizeof(u32));
 	for(i=0; i<image.width; i++)
 	{
-		double col = 0.0;
-		double col2 = 0.0;
+		u32 col = 0.0;
+		u32 col2 = 0.0;
 		for(j=0; j<image.height; j++)
 		{
 			u32 idx = j*image.width + i;
@@ -86,19 +87,19 @@ void MSHCD::HaarCasadeObjectDetection()
 	printf("Total itt = %lf / %lf = %d\n", \
 			log(1.0/StartScale), log(haarcascade.ScaleUpdate), itt);
 	printf("Start iteration.....\n");
-	for(i=0; i<itt; i++)
+	for(i=0; i<itt; ++i)
 	{
 		printf("itt %d ", i+1);
-		Scale = StartScale * pow(haarcascade.ScaleUpdate, i);
-		step = (Scale>2.0) ? Scale : 2.0;
+		Scale = StartScale * pow(haarcascade.ScaleUpdate, itt-i);
+		step = (Scale>2.0) ? (u32)Scale : 2;
 		printf("scale %lf step %d ", Scale, step);
-		width = (u32)(haarcascade.size1*Scale);
-		height = (u32)(haarcascade.size2*Scale);
-		printf("width %d height %d\n", width, height);
+		width = (u32)(haarcascade.size1 * Scale);
+		height = (u32)(haarcascade.size2 * Scale);
+		printf("width %d height %d ", width, height);
 		// Make vectors with all search image coordinates 
 		Point point;
 		vector<Point> points;
-		//0:step:(IntegralImages.width-width-1),
+		//0:step:(IntegralImages.width-width-1)
 		//0:step:(IntegralImages.height-height-1)
 		for(x=0; x<image.width-width; x+=step)
 		{
@@ -118,7 +119,6 @@ void MSHCD::HaarCasadeObjectDetection()
 			}
 		}
 		OneScaleObjectDetection(points, Scale, width, height);
-		printf("Already found %d object(s)\n", objects.size());
 	}
 	PRINT_FUNCTION_END_INFO();
 }
@@ -152,8 +152,7 @@ void MSHCD::OneScaleObjectDetection(vector<Point> points, double Scale,
 {
 	u32 i, i_stage, i_tree, max;
 	//PRINT_FUNCTION_INFO();
-	printf("*****Total %d rects to find\n", points.size());
-	max = 0;
+	//printf("*****Total %d rects to find\n", points.size());
 	for(i=0; i<points.size(); i++)
 	{
 		u8 pass = 1;
@@ -186,9 +185,10 @@ void MSHCD::OneScaleObjectDetection(vector<Point> points, double Scale,
 			rect.height = height;
 			rect.weight = -1;
 			objects.push_back(rect);
+			printf("+");
 		}
 	}
-	printf("*****Max passed stage %d\n", max);
+	printf("\n");
 	//PRINT_FUNCTION_END_INFO();
 }
 
@@ -200,8 +200,8 @@ double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
 {
 	u32 i_rect, x, y;
 	double InverseArea;
-	double total_x, total_x2, moy, vnorm;
-	double Rectangle_sum;
+	u32 total_x, total_x2;
+	double moy, vnorm, Rectangle_sum;
 	x = point.x;
 	y = point.y;
 	//PRINT_FUNCTION_INFO();
@@ -219,7 +219,7 @@ double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
 	#endif
 	moy = total_x * InverseArea;
 	vnorm = total_x2 * InverseArea - moy * moy;
-	vnorm = (vnorm > 1) ? sqrt(vnorm) : 1;
+	vnorm = (vnorm > 1.0) ? sqrt(vnorm) : 1.0;
 	// for each rectangle in the feature
 	Rectangle_sum = 0.0;
 	for(i_rect=0; i_rect<3; i_rect++)
@@ -241,8 +241,8 @@ double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
 						- image(II1, rx2, ry1) - image(II1, rx1, ry2)) * rect.weight;
 	#endif
 	}
-	double Rectangle_sum2 = Rectangle_sum * InverseArea;
-	if(Rectangle_sum2 < tree.threshold*vnorm)
+	Rectangle_sum *= InverseArea;
+	if(Rectangle_sum < tree.threshold*vnorm)
 		return tree.left_val;
 	else
 		return tree.right_val;
@@ -252,7 +252,7 @@ void MSHCD::GetIntegralCanny()
 {
 	u32 i, j;
 	u32 sum;
-	image.cdata = (double*)malloc(image.width*image.height*(sizeof(double)));
+	image.cdata = (u32*)malloc(image.width*image.height*(sizeof(u32)));
 	for(i=2; i<image.width-2; i++)
 	{
 		for(j=2; j<image.height-2; j++)
@@ -307,10 +307,92 @@ void MSHCD::GetIntegralCanny()
 		for(j=0; j<image.height; j++)
 		{
 			col += *(grad+j*image.width+i);
-			image(CANNY, i, j) = (i>0?image(CANNY, i-1,j):0) + col;
+			image(CANNY, i, j) = (i>0?image(CANNY,i-1,j):0) + col;
 		}
 	}
 	free(grad);
+}
+
+/** Returns true if two rectangles overlap */
+bool equals(Rectangle& r1, Rectangle& r2)
+{
+	u32 dist_x, dist_y;
+	dist_x = (u32)(r1.width * 0.05);
+	dist_y = (u32)(r1.height * 0.05);
+	/* y - distance <= x <= y + distance */
+	if(	r2.x <= r1.x + dist_x &&
+		r2.x >= r1.x - dist_x &&
+		r2.y <= r1.y + dist_y &&
+		r2.y >= r1.y - dist_y &&
+		(r2.width <= r1.width + dist_x || r2.width >= r1.width - dist_x) && 
+		(r2.height <= r1.height + dist_y || r2.height >= r1.height - dist_y) )
+		return true;
+	if(	r1.x>=r2.x && r1.x+r1.width<=r2.x+r2.width &&
+		r1.y>=r2.y && r1.y+r1.height<=r2.y+r2.height )
+		return true;
+	if(	r2.x>=r1.x && r2.x+r2.width<=r1.x+r1.width &&
+		r2.y>=r1.y && r2.y+r2.height<=r1.y+r1.height )
+		return true;
+	return false;
+}
+
+vector<Rectangle> MSHCD::merge(vector<Rectangle> objs, u32 min_neighbors)
+{
+	vector<Rectangle> ret;
+	u32 i, j;
+	u32 *mark = (u32*)malloc(objs.size()*sizeof(u32));
+	u32 nb_classes = 0;
+	/* mark each rectangle with a class number */
+	for(i=0; i<objs.size(); i++)
+	{
+		u8 found = FALSE;
+		for(j=0; j<i; j++)
+		{
+			if(equals(objs[i], objs[j]))
+			{
+				found = TRUE;
+				mark[i] = mark[j];
+			}
+		}
+		if(!found)
+		{
+			mark[i] = nb_classes;
+			nb_classes++;
+		}
+	}
+	u32 *neighbors = (u32*)malloc(nb_classes*sizeof(u32));
+	Rectangle *rects = (Rectangle*)malloc(nb_classes*sizeof(Rectangle));
+	for(i=0; i<nb_classes; i++)
+	{
+		neighbors[i] = 0;
+		rects[i].x = rects[i].y = rects[i].width = rects[i].height = 0;
+	}
+	/* calculate number of rects of each class */
+	for(i=0; i<objs.size(); i++)
+	{
+		neighbors[mark[i]]++;
+		rects[mark[i]].x += objs[i].x;
+		rects[mark[i]].y += objs[i].y;
+		rects[mark[i]].width += objs[i].width;
+		rects[mark[i]].height += objs[i].height;
+	}
+	for(i=0; i<nb_classes; i++)
+	{
+		u32 n = neighbors[i];
+		if(n >= min_neighbors)
+		{
+			Rectangle r;
+			r.x = (rects[i].x*2 + n)/(2*n);
+			r.y = (rects[i].y*2 + n)/(2*n);
+			r.width = (rects[i].width*2 + n)/(2*n);
+			r.height = (rects[i].height*2 + n)/(2*n);
+			ret.push_back(r);
+		}
+	}
+	free(mark);
+    free(neighbors);
+	free(rects);
+	return ret;
 }
 
 void MSHCD::PrintDetectionResult()
