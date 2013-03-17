@@ -71,6 +71,7 @@ typedef struct Image
 
 typedef struct Point
 {
+	Point(u32 _x=0, u32 _y=0):x(_x), y(_y){}
 	u32 x, y;
 }Point;
 
@@ -93,14 +94,13 @@ typedef struct MSHCD
 	explicit MSHCD(const char* imagefile, const char* haarcasadefile);
 	void GetIntergralImages(const char* imagefile);
 	void HaarCasadeObjectDetection();
-	void OneScaleObjectDetection(vector<Point> points, double Scale,
-		                         u32 w, u32 h);
+	void OneScaleObjectDetection(Point point, double Scale,
+		                         u32 width, u32 height);
 	double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 		                       u32 width, u32 height);
 	void PrintDetectionResult();
 	vector<Rectangle> merge(vector<Rectangle> objs, u32 min_neighbors);
 	void GetIntegralCanny();
-	double GetSumRect(u8 type, u32 x, u32 y, u32 w, u32 h);
 }MSHCD;
 
 #endif

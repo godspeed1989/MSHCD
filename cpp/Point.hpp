@@ -4,16 +4,9 @@
 
 typedef struct Point
 {
-	u32 x, y;
-	Point()
-	{
-		x = y = 0;
-	}
-	Point(u32 x, u32 y)
-	{
-		this->x = x;
-		this->y = y;
-	}
+	u32 x;
+	u32 y;
+	Point(u32 _x=0, u32 _y=0): x(_x), y(_y) {}
 }Point;
 
 #endif

@@ -7,16 +7,11 @@
  */
 typedef struct Rectangle
 {
-	u32 x, y, width, height;
+	u32 x, y;
+	u32 width, height;
 	double weight;
-	Rectangle()
-	{
-		this->x = 0;
-		this->y = 0;
-		this->width = 0;
-		this->height = 0;
-		this->weight = 0;
-	}
+	Rectangle(): x(0), y(0), width(0), height(0), weight(0)
+	{}
 	Rectangle(u32 x, u32 y, u32 width, u32 height, double weight)
 	{
 		this->x = x;

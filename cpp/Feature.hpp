@@ -55,17 +55,12 @@ typedef struct Feature
 		
 		/* Compute the sum of the pixel values in the window, 
 		 * get the mean and variance of pixel values */
-	#define GET_SUM
-	#ifdef GET_SUM
-		u32 total_x = integral.getSum(x, y, w, h);
-		u32 total_x2 = squares.getSum(x, y, w, h);
-	#else
 		u32 total_x = integral(x+w,y+h)+integral(x,y)-integral(x+w,y)-integral(x,y+h);
 		u32 total_x2 = squares(x+w,y+h)+squares(x,y)-squares(x+w,y)-squares(x,y+h);
-	#endif
+		
 		double moy = total_x * inv_area;
 		double vnorm = total_x2 * inv_area - moy * moy;
-		vnorm = (vnorm > 1) ? sqrt(vnorm) : 1;
+		vnorm = (vnorm > 1.0) ? sqrt(vnorm) : 1.0;
 
 		double rect_sum = 0;
 		/* For each rectangle in the feature. */
@@ -73,21 +68,11 @@ typedef struct Feature
 		{
 			Rectangle& rect = this->rects[k];
 			/* Scale the rectangle according to the window size. */
-		#ifdef GET_SUM
-			u32 RectX = rect.x * scale + x;
-			u32 RectY = rect.y * scale + y;
-			u32 RectWidth = rect.width * scale;
-			u32 RectHeight = rect.height * scale;
-			/* Add the sum of pixel values in the rectangles 
-			 * (weighted by the rectangle's weight) to the total sum */
-			rect_sum += integral.getSum(RectX, RectY, RectWidth, RectHeight)*rect.weight;
-		#else
 			u32 rx1 = x + (u32) (scale * rect.x);
 			u32 rx2 = x + (u32) (scale * (rect.x+rect.width));
 			u32 ry1 = y + (u32) (scale * rect.y);
 			u32 ry2 = y + (u32) (scale * (rect.y+rect.height));
 			rect_sum += (integral(rx2,ry2)+integral(rx1,ry1)-integral(rx1,ry2)-integral(rx2,ry1))*rect.weight;
-		#endif
 		}
 		double rect_sum2 = rect_sum * inv_area;
 		/* Return LEFT or RIGHT depending on how the total sum compares to the threshold. */

@@ -86,7 +86,7 @@ void MSHCD::HaarCasadeObjectDetection()
 	itt = (u32)ceil(log(1.0/StartScale)/log(haarcascade.ScaleUpdate));
 	printf("Total itt = %lf / %lf = %d\n", \
 			log(1.0/StartScale), log(haarcascade.ScaleUpdate), itt);
-	printf("Start iteration.....\n");
+	printf("Start detection.....\n");
 	for(i=0; i<itt; ++i)
 	{
 		printf("itt %d ", i+1);
@@ -96,9 +96,6 @@ void MSHCD::HaarCasadeObjectDetection()
 		width = (u32)(haarcascade.size1 * Scale);
 		height = (u32)(haarcascade.size2 * Scale);
 		printf("width %d height %d ", width, height);
-		// Make vectors with all search image coordinates 
-		Point point;
-		vector<Point> points;
 		//0:step:(IntegralImages.width-width-1)
 		//0:step:(IntegralImages.height-height-1)
 		for(x=0; x<image.width-width; x+=step)
@@ -114,81 +111,53 @@ void MSHCD::HaarCasadeObjectDetection()
 					if( d<20 || d>100 )
 						continue;
 				}
-				point.x = x, point.y = y;
-				points.push_back(point);
+				OneScaleObjectDetection(Point(x,y), Scale, width, height);
 			}
 		}
-		OneScaleObjectDetection(points, Scale, width, height);
+		printf("\n");
 	}
 	PRINT_FUNCTION_END_INFO();
-}
-
-double MSHCD::GetSumRect(u8 type, u32 x, u32 y, u32 w, u32 h)
-{
-	if(w==0 || h==0)
-		return 0;
-	w--; h--;
-	//printf("(%d %d) %d %d\n", x, y, w, h);
-	assert(x+w<image.width && y+h<image.height);
-	if(type == II1)
-		return	*( image.idata1+(y+h)*image.width+(x+w) )
-			-	*( image.idata1+(y+0)*image.width+(x+w) )
-			-	*( image.idata1+(y+h)*image.width+(x+0) )
-			+	*( image.idata1+(y+0)*image.width+(x+0) );
-	if(type == II2)
-		return	*( image.idata2+(y+h)*image.width+(x+w) )
-			-	*( image.idata2+(y+0)*image.width+(x+w) )
-			-	*( image.idata2+(y+h)*image.width+(x+0) )
-			+	*( image.idata2+(y+0)*image.width+(x+0) );
-	assert(0);
-	return 0;
 }
 
 /**
  * detect the object at a fixed scale, fixed width, fixed height
  */
-void MSHCD::OneScaleObjectDetection(vector<Point> points, double Scale,
+void MSHCD::OneScaleObjectDetection(Point point, double Scale,
                                     u32 width, u32 height)
 {
-	u32 i, i_stage, i_tree, max;
+	u32 i_stage, i_tree;
+	u8 pass = TRUE;
 	//PRINT_FUNCTION_INFO();
-	//printf("*****Total %d rects to find\n", points.size());
-	for(i=0; i<points.size(); i++)
+	for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
 	{
-		u8 pass = 1;
-		for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
+		DPRINTF("----Stage %d----", i_stage);
+		Stage &stage = haarcascade.stages[i_stage];
+		double StageSum =  0.0;
+		for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
 		{
-			DPRINTF("----Stage %d----", i_stage);
-			Stage &stage = haarcascade.stages[i_stage];
-			double StageSum =  0.0;
-			for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
-			{
-				Tree &tree = stage.trees[i_tree];
-				DPRINTF("----Tree %d----\n", i_tree);
-				StageSum += TreeObjectDetection(tree, Scale, points[i], width, height);
-			}
-			if(StageSum > stage.threshold)
-				continue;
-			else
-			{
-				pass = 0;
-				break;
-			}
+			Tree &tree = stage.trees[i_tree];
+			DPRINTF("----Tree %d----\n", i_tree);
+			StageSum += TreeObjectDetection(tree, Scale, point, width, height);
 		}
-		if(i_stage > max) max = i_stage;
-		if(pass)
+		if(StageSum > stage.threshold)
+			continue;
+		else
 		{
-			Rectangle rect;
-			rect.x = points[i].x;
-			rect.y = points[i].y;
-			rect.width = width;
-			rect.height = height;
-			rect.weight = -1;
-			objects.push_back(rect);
-			printf("+");
+			pass = FALSE;
+			break;
 		}
 	}
-	printf("\n");
+	if(pass == TRUE)
+	{
+		Rectangle rect;
+		rect.x = point.x;
+		rect.y = point.y;
+		rect.width = width;
+		rect.height = height;
+		rect.weight = -1;
+		objects.push_back(rect);
+		printf("+");
+	}
 	//PRINT_FUNCTION_END_INFO();
 }
 
@@ -198,25 +167,21 @@ void MSHCD::OneScaleObjectDetection(vector<Point> points, double Scale,
 double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
                                   u32 width, u32 height)
 {
-	u32 i_rect, x, y;
+	u32 i_rect;
 	double InverseArea;
 	u32 total_x, total_x2;
 	double moy, vnorm, Rectangle_sum;
-	x = point.x;
-	y = point.y;
+	u32 &x = point.x;
+	u32 &y = point.y;
 	//PRINT_FUNCTION_INFO();
 	// get the variance of pixel values in the window
 	InverseArea = 1.0/(width*height);
-	//#define GET_SUM
-	#ifdef GET_SUM
-	total_x = GetSumRect(II1, point.x, point.y, width, height);
-	total_x2 = GetSumRect(II2, point.x, point.y, width, height);
-	#else
+	
 	total_x = image(II1, x+width, y+height) + image(II1, x, y)
 			- image(II1, x+width, y) - image(II1, x, y+height);
 	total_x2 = image(II2, x+width, y+height) + image(II2, x, y)
 			- image(II2, x+width, y) - image(II2, x, y+height);
-	#endif
+	
 	moy = total_x * InverseArea;
 	vnorm = total_x2 * InverseArea - moy * moy;
 	vnorm = (vnorm > 1.0) ? sqrt(vnorm) : 1.0;
@@ -226,20 +191,12 @@ double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
 	{
 		Rectangle &rect = tree.rects[i_rect];
 		//printf("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
-	#ifdef GET_SUM
-		u32 RectX = rect.x * Scale + x;
-		u32 RectY = rect.y * Scale + y;
-		u32 RectWidth = rect.width * Scale;
-		u32 RectHeight = rect.height * Scale;
-		Rectangle_sum += GetSumRect(II1, RectX, RectY, RectWidth, RectHeight) * rect.weight;
-	#else
 		u32 rx1 = x + (u32) (Scale * rect.x);
 		u32 rx2 = x + (u32) (Scale * (rect.x+rect.width));
 		u32 ry1 = y + (u32) (Scale * rect.y);
 		u32 ry2 = y + (u32) (Scale * (rect.y+rect.height));
 		Rectangle_sum += (image(II1, rx2, ry2) + image(II1, rx1, ry1)
 						- image(II1, rx2, ry1) - image(II1, rx1, ry2)) * rect.weight;
-	#endif
 	}
 	Rectangle_sum *= InverseArea;
 	if(Rectangle_sum < tree.threshold*vnorm)
@@ -317,8 +274,8 @@ void MSHCD::GetIntegralCanny()
 bool equals(Rectangle& r1, Rectangle& r2)
 {
 	u32 dist_x, dist_y;
-	dist_x = (u32)(r1.width * 0.05);
-	dist_y = (u32)(r1.height * 0.05);
+	dist_x = (u32)(r1.width * 0.15);
+	dist_y = (u32)(r1.height * 0.15);
 	/* y - distance <= x <= y + distance */
 	if(	r2.x <= r1.x + dist_x &&
 		r2.x >= r1.x - dist_x &&

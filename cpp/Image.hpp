@@ -10,15 +10,12 @@ typedef struct Image
 {
 	u32 *data;
 	u32 width, height;
-	Image()
+	Image(): width(0), height(0)
 	{
-		this->width = this->height = 0;
-		this->data = NULL;
+		data = NULL;
 	}
-	Image(u32 w, u32 h)
+	Image(u32 w, u32 h): width(w), height(h)
 	{
-		this->width = w;
-		this->height = h;
 		this->data = (u32*)malloc(w*h*sizeof(u32));
 		assert(this->data);
 	}
@@ -51,23 +48,6 @@ typedef struct Image
 	u32 getHeight()
 	{
 		return this->height;
-	}
-	u32 getSum(u32 x, u32 y,
-						u32 w, u32 h)
-	{
-		if(x+w<width && y+h<height)
-		{
-			return	*( data+(y+h)*width+(x+w) )
-				+	*( data+(y+0)*width+(x+0) )
-				-	*( data+(y+h)*width+(x+0) )
-				-	*( data+(y+0)*width+(x+w) );
-		}
-		else
-		{
-			printf("Image: (%d+%d, %d+%d)\n", x, y, w, h);
-			printf("Image: %d %d\n", width, height);
-			assert(0);
-		}
 	}
 	u32& operator () (u32 x, u32 y)
 	{
