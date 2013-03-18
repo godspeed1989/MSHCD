@@ -187,7 +187,7 @@ double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
 	vnorm = (vnorm > 1.0) ? sqrt(vnorm) : 1.0;
 	// for each rectangle in the feature
 	Rectangle_sum = 0.0;
-	for(i_rect=0; i_rect<3; i_rect++)
+	for(i_rect=0; i_rect<tree.nb_rects; i_rect++)
 	{
 		Rectangle &rect = tree.rects[i_rect];
 		//printf("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);

@@ -29,6 +29,7 @@ u32 GetHaarCascade(const char* filename, vector<Stage>& Stages)
 			i = 0;
 			flag = 0;
 			trees = t;
+			tree.nb_rects = 0;
 			while(t==trees && i<7)
 			{
 				fscanf(fin, "%d%d%d", &stages, &trees, &value);
@@ -44,7 +45,8 @@ u32 GetHaarCascade(const char* filename, vector<Stage>& Stages)
 					fscanf(fin, "%d", &rect.width);
 					fscanf(fin, "%d", &rect.height);
 					fscanf(fin, "%lf", &rect.weight);
-					tree.rects[i] = rect;
+					tree.rects[tree.nb_rects] = rect;
+					tree.nb_rects++;
 				}
 				else if(i == 2)
 				{
@@ -53,20 +55,19 @@ u32 GetHaarCascade(const char* filename, vector<Stage>& Stages)
 					if(value == 0)
 					{
 						tree.tilted = 0;
-						tree.nb_rects = 2;
 						memset(&rect, 0, sizeof(Rectangle));
 						tree.rects[i] = rect;
 					}
 					else if(value == 3) // exist 3rd rect
 					{
 						flag = 1;
-						tree.nb_rects = 3;
 						fscanf(fin, "%d", &rect.x);
 						fscanf(fin, "%d", &rect.y);
 						fscanf(fin, "%d", &rect.width);
 						fscanf(fin, "%d", &rect.height);
 						fscanf(fin, "%lf", &rect.weight);
-						tree.rects[i] = rect;
+						tree.rects[tree.nb_rects] = rect;
+						tree.nb_rects++;
 					}
 					else
 						assert(0);
