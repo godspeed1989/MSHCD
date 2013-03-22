@@ -5,7 +5,7 @@
 int main()
 {
 	const char * imagefile = "../tools/gray_img.raw";
-	const char * cascadefile = "../haar_alt.txt";
+	const char * cascadefile = "../trees.txt";
 	FILE *fin, *fout;
 	u32 w, h;
 	u8* data;

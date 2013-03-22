@@ -23,6 +23,7 @@ int main(int argc, const char* argv[])
 	{
 		fprintf(fout, "%c", image.data[i]);
 	}
+	imwrite("gray_img.pgm", image);
 	fflush(fout);
 	fclose(fout);
 	// test read & show the `raw` image

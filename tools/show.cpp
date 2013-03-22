@@ -3,7 +3,7 @@
 #include "../c/mshcd.hpp"
 using namespace cv;
 
-int GetHaarCascade(const char* filename, vector<Stage>& Stages);
+u32 GetHaarCascade(const char* filename, vector<Stage>& Stages);
 
 static HaarCascade haarcascade;
 
@@ -12,11 +12,17 @@ int main(int argc, const char* argv[])
 	const double scale = 30;
 	const unsigned int ext = 20;
 	unsigned int i, j, k, size1, size2;
-	
+
+	if(argc<2)
+	{
+		printf("Usage: %s filename\n", argv[0]);
+		return -1;
+	}
+
 	Scalar black(0, 0, 0, 0);
 	Scalar gray(190, 190, 190, 0);
 	Scalar white(255, 255, 255, 0);
-	size1 = size2 = GetHaarCascade("../haar_default.txt", haarcascade.stages);
+	size1 = size2 = GetHaarCascade(argv[1], haarcascade.stages);
 	Size size(size1*scale+ext, size2*scale+ext);
 	for(i=0; i<haarcascade.stages.size(); i++)
 	{
