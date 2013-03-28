@@ -1,5 +1,6 @@
 #include "mshcd.hpp"
-
+//#include <opencv2/opencv.hpp>
+//TODO: when include this file, the detection failed!
 MSHCD::MSHCD(const char* imagefile, const char* haarcasadefile)
 {
 	assert(sizeof(u8) == 1);
@@ -21,10 +22,12 @@ MSHCD::MSHCD(const char* imagefile, const char* haarcasadefile)
  */
 void MSHCD::GetIntergralImages(const char* imagefile)
 {
-	FILE *fin;
 	u32 i, j, size;
 	PRINT_FUNCTION_INFO();
-	// read grayscale image data from raw image
+	#define USE_RAW
+#ifdef USE_RAW
+	FILE *fin;
+	printf("read grayscale image data from raw image.\n");
 	fin = fopen(imagefile, "rb");
 	assert(fin);
 	fread(&image.width, 4, 1, fin);
@@ -32,8 +35,17 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 	printf("%d X %d\n", image.width, image.height);
 	size = image.width*image.height;
 	image.data = (u8*)malloc(size*sizeof(u8));
-	fread(image.data, image.width*image.height, 1, fin);
+	fread(image.data, size*sizeof(u8), 1, fin);
 	fclose(fin);
+#else
+	cv::Mat img = cv::imread(imagefile, 0);
+	image.width = img.cols;
+	image.height = img.rows;
+	printf("%d X %d\n", image.width, image.height);
+	size = image.width*image.height;
+	image.data = (u8*)malloc(size*sizeof(u8));
+	memcpy(image.data, img.data, size*sizeof(u8));
+#endif
 	
 	image.idata1 = (u32*)malloc(size*sizeof(u32));
 	memset(image.idata1, 0, size*sizeof(u32));
@@ -58,12 +70,12 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 			*(image.idata2 + idx) += col2;
 		}
 	}
-	/*for(i=0; i<10; i++)
+	for(i=0; i<10; i++)
 	{
 		for(j=0; j<10; j++)
 			printf("%d ", (int)*(image.data+j*image.width+i));
 		printf("\n");
-	}*/
+	}
 	PRINT_FUNCTION_END_INFO();
 }
 

@@ -30,3 +30,4 @@ int main(int argc, const char* argv[])
 	imwrite("result.jpg", image);
 	return 0;
 }
+

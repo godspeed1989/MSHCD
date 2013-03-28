@@ -37,6 +37,7 @@ typedef struct Stage
 			sum += trees[i].getVal(integral, squares, x, y, scale);
 		}
 		/* The stage succeeds if the sum exceeds the stage threshold */
+		//printf("%lf ~ %lf\n", sum, threshold);
 		return sum > threshold;
 	}
 }Stage;

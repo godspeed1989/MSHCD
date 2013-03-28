@@ -5,7 +5,7 @@
 int main()
 {
 	const char * imagefile = "../tools/gray_img.raw";
-	const char * cascadefile = "../trees.txt";
+	const char * cascadefile = "../haar_alt.txt";
 	FILE *fin, *fout;
 	u32 w, h;
 	u8* data;
@@ -29,7 +29,7 @@ int main()
 	free(data);
 	
 	Detector detect(cascadefile);
-	vector<Rectangle> obj = detect.getObjects(image, 1, 1.2f, 0.15f, 1, 1);
+	vector<Rectangle> obj = detect.getObjects(image, 2, 1.4f, 0.1f, 1, 1);
 	printf("Number objects %d after merge\n", obj.size());
 	fout = fopen("result.txt", "w");
 	for(i=0; i<obj.size(); i++)

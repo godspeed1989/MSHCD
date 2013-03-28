@@ -99,7 +99,6 @@ typedef struct Detector
 					bool pass = true;
 					for(k=0; k<stages.size(); k++)
 					{
-						
 						/*If one stage fails, the zone is rejected.*/
 						if(!stages[k].pass(integral, squares, x, y, scale))
 						{

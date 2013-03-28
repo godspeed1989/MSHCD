@@ -1,12 +1,12 @@
 CC=g++
 TARGET=mshcd
-CFLAGS = -Wall
-CFLAGS+= -g
+CFLAGS=`pkg-config --cflags opencv`
+LIBS=`pkg-config --libs opencv`
 
 all: $(TARGET)
 
 $(TARGET): $(TARGET).cpp GetHaarCascade.cpp main.cpp
-	$(CC) $(CFLAGS) -o $@ $+
+	$(CC) $+ $(LIBS) $(CFLAGS) -o $@
 
 clean:
 	rm -rf $(TARGET)
