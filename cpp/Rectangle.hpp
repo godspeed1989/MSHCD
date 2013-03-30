@@ -1,6 +1,6 @@
 #ifndef __RECT_H__
 #define __RECT_H__
-#include <stdio.h>
+#include <cstdio>
 #include "mshcd.hpp"
 /**
  * A simple class describing a rectangle, along with a weight.

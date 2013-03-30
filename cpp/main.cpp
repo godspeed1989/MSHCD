@@ -1,5 +1,5 @@
+#include <cstdio>
 #include "Detector.hpp"
-#include <stdio.h>
 #include "mshcd.hpp"
 
 int main()

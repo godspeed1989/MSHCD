@@ -1,11 +1,11 @@
 #ifndef __MSHCD_HPP__
 #define __MSHCD_HPP__
 
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdio>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 #include <vector>
 using namespace std;
 
@@ -65,19 +65,21 @@ typedef struct Image
 			return *(idata2 + y*width + x);
 		if(type == CANNY)
 			return *(cdata + y*width + x);
+		else
+			printf("Error: Unknow Image Type!\n");
 		return *(idata1 + y*width + x);
 	}
 }Image;
 
 typedef struct Point
 {
-	Point(u32 _x=0, u32 _y=0):x(_x), y(_y){}
 	u32 x, y;
+	Point(u32 _x=0, u32 _y=0):x(_x), y(_y){}
 }Point;
 
 #define PRINT_FUNCTION_INFO() printf("------%s()\n", __FUNCTION__)
 #define PRINT_FUNCTION_END_INFO() printf("%s()------\n", __FUNCTION__)
-
+//#define DEBUG
 #ifdef DEBUG
 #define DPRINTF(args...) printf(args)
 #else
@@ -85,6 +87,8 @@ typedef struct Point
 #endif
 
 extern u32 GetHaarCascade(const char* filename, vector<Stage>& Stages);
+
+#define WITH_OPENCV
 
 typedef struct MSHCD
 {
@@ -94,7 +98,7 @@ typedef struct MSHCD
 	explicit MSHCD(const char* imagefile, const char* haarcasadefile);
 	void GetIntergralImages(const char* imagefile);
 	void HaarCasadeObjectDetection();
-	void OneScaleObjectDetection(Point point, double Scale,
+	void OneScaleObjectDetection(Point& point, double Scale,
 		                         u32 width, u32 height);
 	double TreeObjectDetection(Tree& tree, double Scale, Point& point,
 		                       u32 width, u32 height);

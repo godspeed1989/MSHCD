@@ -1,7 +1,7 @@
 #ifndef __STAGE_H__
 #define __STAGE_H__
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include "Tree.hpp"
 #include "mshcd.hpp"
 using namespace std;

@@ -1,8 +1,8 @@
 #ifndef __TREE_H__
 #define __TREE_H__
 #include <vector>
-#include <math.h>
-#include <assert.h>
+#include <cmath>
+#include <cassert>
 #include "Feature.hpp"
 #include "Image.hpp"
 #include "mshcd.hpp"

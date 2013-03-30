@@ -49,12 +49,12 @@ typedef struct CannyPruner
 			}
 		}
 		/*Computation of the discrete gradient of the image.*/
+		long grad_x, grad_y;
 		Image grad(grayImage.width, grayImage.height);
 		for(i=1; i<canny.width-1; i++)
 		{
 			for(j=1; j<canny.height-1; j++)
 			{
-				u32 grad_x, grad_y;
 				grad_x =-canny(i-1,j-1)+canny(i+1,j-1)-2*canny(i-1,j)+2*canny(i+1,j)-canny(i-1,j+1)+canny(i+1,j+1);
 				grad_y = canny(i-1,j-1)+2*canny(i,j-1)+canny(i+1,j-1)-canny(i-1,j+1)-2*canny(i,j+1)-canny(i+1,j+1);
 				grad(i, j) = abs(grad_x) + abs(grad_y);

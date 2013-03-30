@@ -1,8 +1,11 @@
 #include "mshcd.hpp"
-//#include <opencv2/opencv.hpp>
+#ifdef WITH_OPENCV
+#include <opencv2/opencv.hpp>
+#endif
 //TODO: when include this file, the detection failed!
 MSHCD::MSHCD(const char* imagefile, const char* haarcasadefile)
 {
+
 	assert(sizeof(u8) == 1);
 	assert(sizeof(u16) == 2);
 	assert(sizeof(u32) == 4);
@@ -24,8 +27,7 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 {
 	u32 i, j, size;
 	PRINT_FUNCTION_INFO();
-	#define USE_RAW
-#ifdef USE_RAW
+//#ifndef WITH_OPENCV
 	FILE *fin;
 	printf("read grayscale image data from raw image.\n");
 	fin = fopen(imagefile, "rb");
@@ -37,7 +39,7 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 	image.data = (u8*)malloc(size*sizeof(u8));
 	fread(image.data, size*sizeof(u8), 1, fin);
 	fclose(fin);
-#else
+/*#else
 	cv::Mat img = cv::imread(imagefile, 0);
 	image.width = img.cols;
 	image.height = img.rows;
@@ -45,7 +47,7 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 	size = image.width*image.height;
 	image.data = (u8*)malloc(size*sizeof(u8));
 	memcpy(image.data, img.data, size*sizeof(u8));
-#endif
+#endif*/
 	
 	image.idata1 = (u32*)malloc(size*sizeof(u32));
 	memset(image.idata1, 0, size*sizeof(u32));
@@ -70,12 +72,12 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 			*(image.idata2 + idx) += col2;
 		}
 	}
-	for(i=0; i<10; i++)
+	/*for(i=0; i<10; i++)
 	{
 		for(j=0; j<10; j++)
 			printf("%d ", (int)*(image.data+j*image.width+i));
 		printf("\n");
-	}
+	}*/
 	PRINT_FUNCTION_END_INFO();
 }
 
@@ -123,7 +125,8 @@ void MSHCD::HaarCasadeObjectDetection()
 					if( d<20 || d>100 )
 						continue;
 				}
-				OneScaleObjectDetection(Point(x,y), Scale, width, height);
+				Point pnt(x,y);
+				OneScaleObjectDetection(pnt, Scale, width, height);
 			}
 		}
 		printf("\n");
@@ -134,7 +137,7 @@ void MSHCD::HaarCasadeObjectDetection()
 /**
  * detect the object at a fixed scale, fixed width, fixed height
  */
-void MSHCD::OneScaleObjectDetection(Point point, double Scale,
+void MSHCD::OneScaleObjectDetection(Point& point, double Scale,
                                     u32 width, u32 height)
 {
 	u32 i_stage, i_tree;
@@ -256,12 +259,12 @@ void MSHCD::GetIntegralCanny()
 		}
 	}
 	/*Computation of the discrete gradient of the image.*/
+	long grad_x, grad_y;
 	u32 *grad = (u32*)malloc(image.width*image.height*(sizeof(u32)));
 	for(i=1; i<image.width-1; i++)
 	{
 		for(j=1; j<image.height-1; j++)
 		{
-			u32 grad_x, grad_y;
 			grad_x = -image(CANNY,i-1,j-1)+image(CANNY,i+1,j-1)-2*image(CANNY,i-1,j)+
 					2*image(CANNY,i+1,j)-image(CANNY,i-1,j+1)+image(CANNY,i+1,j+1);
 			grad_y = image(CANNY,i-1,j-1)+2*image(CANNY,i,j-1)+image(CANNY,i+1,j-1)-
@@ -270,15 +273,30 @@ void MSHCD::GetIntegralCanny()
 		}
 	}
 	/* Suppression of non-maxima of the gradient and computation of the integral Canny image. */
+	u32 col;
 	for(i=0; i<image.width; i++)
 	{
-		u32 col=0;
+		col = 0;
 		for(j=0; j<image.height; j++)
 		{
 			col += *(grad+j*image.width+i);
 			image(CANNY, i, j) = (i>0?image(CANNY,i-1,j):0) + col;
 		}
 	}
+#ifdef WITH_OPENCV
+	FILE * fff = fopen("cvcanny.txt", "w");
+#else
+	FILE * fff = fopen("nocvcanny.txt", "w");
+#endif
+	for(i=0; i<image.width; i++)
+	{
+		for(j=0; j<image.height; j++)
+		{
+			fprintf(fff, "%d ", *(grad+j*image.width+i));
+		}
+		fprintf(fff, "\n");
+	}
+	fclose(fff);
 	free(grad);
 }
 

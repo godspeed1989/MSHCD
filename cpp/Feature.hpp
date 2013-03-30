@@ -2,7 +2,7 @@
 #define __FEATURE_H__
 
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include "Rectangle.hpp"
 #include "Point.hpp"
 #include "Image.hpp"

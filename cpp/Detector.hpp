@@ -1,9 +1,9 @@
 #ifndef __DETECTOR_H__
 #define __DETECTOR_H__
 #include <vector>
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
 #include "Stage.hpp"
 #include "Point.hpp"
 #include "CannyPruner.hpp"

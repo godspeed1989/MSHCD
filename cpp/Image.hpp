@@ -1,9 +1,10 @@
 #ifndef __IMAGE_H__
 #define __IMAGE_H__
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include "mshcd.hpp"
 
 typedef struct Image
