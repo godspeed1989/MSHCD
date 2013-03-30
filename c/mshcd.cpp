@@ -2,7 +2,7 @@
 #ifdef WITH_OPENCV
 #include <opencv2/opencv.hpp>
 #endif
-//TODO: when include this file, the detection failed!
+
 MSHCD::MSHCD(const char* imagefile, const char* haarcasadefile)
 {
 
@@ -27,7 +27,7 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 {
 	u32 i, j, size;
 	PRINT_FUNCTION_INFO();
-//#ifndef WITH_OPENCV
+#ifndef WITH_OPENCV
 	FILE *fin;
 	printf("read grayscale image data from raw image.\n");
 	fin = fopen(imagefile, "rb");
@@ -39,7 +39,7 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 	image.data = (u8*)malloc(size*sizeof(u8));
 	fread(image.data, size*sizeof(u8), 1, fin);
 	fclose(fin);
-/*#else
+#else
 	cv::Mat img = cv::imread(imagefile, 0);
 	image.width = img.cols;
 	image.height = img.rows;
@@ -47,7 +47,7 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 	size = image.width*image.height;
 	image.data = (u8*)malloc(size*sizeof(u8));
 	memcpy(image.data, img.data, size*sizeof(u8));
-#endif*/
+#endif
 	
 	image.idata1 = (u32*)malloc(size*sizeof(u32));
 	memset(image.idata1, 0, size*sizeof(u32));
@@ -283,20 +283,6 @@ void MSHCD::GetIntegralCanny()
 			image(CANNY, i, j) = (i>0?image(CANNY,i-1,j):0) + col;
 		}
 	}
-#ifdef WITH_OPENCV
-	FILE * fff = fopen("cvcanny.txt", "w");
-#else
-	FILE * fff = fopen("nocvcanny.txt", "w");
-#endif
-	for(i=0; i<image.width; i++)
-	{
-		for(j=0; j<image.height; j++)
-		{
-			fprintf(fff, "%d ", *(grad+j*image.width+i));
-		}
-		fprintf(fff, "\n");
-	}
-	fclose(fff);
 	free(grad);
 }
 

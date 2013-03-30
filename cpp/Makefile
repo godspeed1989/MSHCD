@@ -1,5 +1,6 @@
 CC=g++
-CPPFLAGS= -g -Wall
+CPPFLAGS=-Wall `pkg-config --cflags opencv`
+LIBS=`pkg-config --libs opencv`
 TARGET=mshcd
 
 all: $(TARGET)
@@ -9,7 +10,7 @@ main.o: main.cpp Detector.hpp Stage.hpp Tree.hpp Feature.hpp Rectangle.hpp \
 
 
 $(TARGET): main.o GetHaarCascade.cpp
-	$(CC) $(CPPFLAGS) $+ -o $@
+	$(CC) $(CPPFLAGS) $+ $(LIBS) -o $@
 
 
 clean:

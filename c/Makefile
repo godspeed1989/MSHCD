@@ -1,6 +1,6 @@
 CC=g++
 TARGET=mshcd
-CPPFLAGS=-Wall `pkg-config --cflags opencv` -g
+CPPFLAGS=-Wall `pkg-config --cflags opencv`
 LIBS=`pkg-config --libs opencv`
 
 all: $(TARGET)
