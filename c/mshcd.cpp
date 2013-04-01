@@ -10,7 +10,7 @@ MSHCD::MSHCD(const char* imagefile, const char* haarcasadefile)
 	assert(sizeof(u16) == 2);
 	assert(sizeof(u32) == 4);
 	assert(sizeof(u64) == 8);
-	haarcascade.ScaleUpdate = 1.0/1.3;
+	haarcascade.ScaleUpdate = 1.0/1.4;
 	haarcascade.size1 = haarcascade.size2 =
 	GetHaarCascade(haarcasadefile, haarcascade.stages); // get classifer from file
 	GetIntergralImages(imagefile);  // calculate integral image
@@ -122,7 +122,7 @@ void MSHCD::HaarCasadeObjectDetection()
 					edges_density = image(CANNY,x+width,y+height)+image(CANNY,x,y)-
 									image(CANNY,x,y+height)-image(CANNY,x+width,y);
 					d = edges_density/(width*height);
-					if( d<20 || d>100 )
+					if( d<20 || d>150 )
 						continue;
 				}
 				Point pnt(x,y);
@@ -383,4 +383,28 @@ void MSHCD::PrintDetectionResult()
 	fclose(fout);
 	PRINT_FUNCTION_END_INFO();
 }
+
+#ifdef WITH_OPENCV
+void MSHCD::ShowDetectionResult(const char* file)
+{
+	u32 i_obj;
+	cv::Point pt1, pt2;
+	cv::Mat image = cv::imread(file, 1);
+	cv::Scalar scalar(255, 255, 0, 0);
+	if(objects.size() == 0)
+		return;
+	for(i_obj=0; i_obj<objects.size(); i_obj++)
+	{
+		Rectangle &rect = objects[i_obj];
+		pt1.x = rect.x;
+		pt1.y = rect.y;
+		pt2.x = pt1.x + rect.width;
+		pt2.y = pt1.y + rect.height;
+		rectangle(image, pt1, pt2, scalar, 3, 8, 0);
+	}
+	cv::imshow("result", image);
+	cv::waitKey();
+	cv::imwrite("result.jpg", image);
+}
+#endif
 
