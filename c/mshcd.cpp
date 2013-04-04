@@ -10,7 +10,7 @@ MSHCD::MSHCD(const char* imagefile, const char* haarcasadefile)
 	assert(sizeof(u16) == 2);
 	assert(sizeof(u32) == 4);
 	assert(sizeof(u64) == 8);
-	haarcascade.ScaleUpdate = 1.0/1.4;
+	haarcascade.ScaleUpdate = 1.0/1.3;
 	haarcascade.size1 = haarcascade.size2 =
 	GetHaarCascade(haarcasadefile, haarcascade.stages); // get classifer from file
 	GetIntergralImages(imagefile);  // calculate integral image
@@ -40,7 +40,8 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 	fread(image.data, size*sizeof(u8), 1, fin);
 	fclose(fin);
 #else
-	cv::Mat img = cv::imread(imagefile, 0);
+	cv::Mat img;
+	img = cv::imread(imagefile, 0);
 	image.width = img.cols;
 	image.height = img.rows;
 	printf("%d X %d\n", image.width, image.height);

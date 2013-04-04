@@ -28,7 +28,10 @@ int main()
 	fread(data, size, 1, fin);
 	fclose(fin);
 #else
-	cv::Mat img = cv::imread(imagefile, 0);
+	cv::Mat img;
+	cv::Point pt1, pt2;
+	cv::Scalar scalar(0, 0, 0, 0);
+	img = cv::imread(imagefile, 0);
 	w = img.cols;
 	h = img.rows;
 	size = w*h;
@@ -45,15 +48,27 @@ int main()
 	free(data);
 	
 	Detector detect(cascadefile);
-	vector<Rectangle> obj = detect.getObjects(image, 1.2, 1.3f, 0.1f, 1, 1);
+	vector<Rectangle> obj = detect.getObjects(image, 1.2, 1.2f, 0.1f, 1, 1);
 	printf("Number objects %d after merge\n", obj.size());
 	fout = fopen("result.txt", "w");
 	for(i=0; i<obj.size(); i++)
 	{
 		fprintf(fout, "%d %d %d %d\n", obj[i].x, obj[i].y, obj[i].width, obj[i].height);
 		printf("%d %d %d %d\n", obj[i].x, obj[i].y, obj[i].width, obj[i].height);
+		#ifdef WITH_OPENCV
+		pt1.x = obj[i].x;
+		pt1.y = obj[i].y;
+		pt2.x = pt1.x + obj[i].width;
+		pt2.y = pt1.y + obj[i].height;
+		rectangle(img, pt1, pt2, scalar, 3, 8, 0);
+		#endif
 	}
 	fclose(fout);
-	
+#ifdef WITH_OPENCV
+	cv::imshow("result", img);
+	cv::waitKey();
+	cv::imwrite("result.jpg", img);
+#endif
 	return 0;
 }
+
