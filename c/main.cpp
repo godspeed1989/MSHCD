@@ -1,12 +1,15 @@
 #include "mshcd.hpp"
 
-int main()
+int main(int argc, const char* argv[])
 {
+	if(argc < 3)
+	{
+		printf("Usage: %s image cascade\n", argv[0]);
+		return -1;
+	}
+	MSHCD mshcd(argv[1], argv[2]);
 #ifdef WITH_OPENCV
-	MSHCD mshcd("../tools/gray_img.jpg", "../haar_alt.txt");
-	mshcd.ShowDetectionResult("../tools/gray_img.jpg");
-#else
-	MSHCD mshcd("../tools/gray_img.raw", "../haar_alt.txt");
+	mshcd.ShowDetectionResult(argv[1]);
 #endif
 	return 0;
 }
