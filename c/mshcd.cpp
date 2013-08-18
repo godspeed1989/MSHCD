@@ -3,27 +3,26 @@
 #include <opencv2/opencv.hpp>
 #endif
 
-MSHCD::MSHCD(const char* imagefile, const char* haarcasadefile)
+void MSHCD(HAAR *m, const char* imagefile, const char* haarcasadefile)
 {
-
 	assert(sizeof(u8) == 1);
 	assert(sizeof(u16) == 2);
 	assert(sizeof(u32) == 4);
 	assert(sizeof(u64) == 8);
-	haarcascade.ScaleUpdate = 1.0/1.3;
-	haarcascade.size1 = haarcascade.size2 =
-	GetHaarCascade(haarcasadefile, haarcascade.stages); // get classifer from file
-	GetIntergralImages(imagefile);  // calculate integral image
-	GetIntegralCanny();             // calculate integral canny image
-	HaarCasadeObjectDetection();    // start detection
-	objects = merge(objects, 1);    // merge found results
-	PrintDetectionResult();         // show detection result
+	m->haarcascade.ScaleUpdate = 1.0/1.14;
+	m->haarcascade.size1 = m->haarcascade.size2 = \
+	GetHaarCascade(haarcasadefile, m->haarcascade.stages); // get classifer from file
+	GetIntergralImages(imagefile, m->image);               // calculate integral image
+	GetIntegralCanny(m->image);                            // calculate integral canny image
+	HaarCasadeObjectDetection(m);                          // start detection
+	m->objects = MergeRects(m->objects, 1);                // merge found results
+	PrintDetectionResult(m->objects);                      // show detection result
 }
 
 /**
  * calculate intergral image from original gray-level image
  */
-void MSHCD::GetIntergralImages(const char* imagefile)
+void GetIntergralImages(const char* imagefile, Image &image)
 {
 	u32 i, j, size;
 	PRINT_FUNCTION_INFO();
@@ -85,8 +84,10 @@ void MSHCD::GetIntergralImages(const char* imagefile)
 /**
  * Dectect object use Multi-scale Haar cascade classifier
  */
-void MSHCD::HaarCasadeObjectDetection()
+void HaarCasadeObjectDetection(HAAR *m)
 {
+	Image &image = m->image;
+	HaarCascade &haarcascade = m->haarcascade;
 	double Scale, StartScale, ScaleWidth, ScaleHeight;
 	u32 i, itt, x, y, width, height, step;
 	PRINT_FUNCTION_INFO();
@@ -127,7 +128,7 @@ void MSHCD::HaarCasadeObjectDetection()
 						continue;
 				}
 				Point pnt(x,y);
-				OneScaleObjectDetection(pnt, Scale, width, height);
+				OneScaleObjectDetection(m, pnt, Scale, width, height);
 			}
 		}
 		printf("\n");
@@ -138,9 +139,10 @@ void MSHCD::HaarCasadeObjectDetection()
 /**
  * detect the object at a fixed scale, fixed width, fixed height
  */
-void MSHCD::OneScaleObjectDetection(Point& point, double Scale,
-                                    u32 width, u32 height)
+void OneScaleObjectDetection(HAAR *m, Point& point, double Scale,
+                             u32 width, u32 height)
 {
+	HaarCascade &haarcascade = m->haarcascade;
 	u32 i_stage, i_tree;
 	u8 pass = TRUE;
 	//PRINT_FUNCTION_INFO();
@@ -153,7 +155,7 @@ void MSHCD::OneScaleObjectDetection(Point& point, double Scale,
 		{
 			Tree &tree = stage.trees[i_tree];
 			DPRINTF("----Tree %d----\n", i_tree);
-			StageSum += TreeObjectDetection(tree, Scale, point, width, height);
+			StageSum += TreeObjectDetection(m, tree, Scale, point, width, height);
 		}
 		if(StageSum > stage.threshold)
 			continue;
@@ -171,7 +173,7 @@ void MSHCD::OneScaleObjectDetection(Point& point, double Scale,
 		rect.width = width;
 		rect.height = height;
 		rect.weight = -1;
-		objects.push_back(rect);
+		m->objects.push_back(rect);
 		printf("+");
 	}
 	//PRINT_FUNCTION_END_INFO();
@@ -180,9 +182,10 @@ void MSHCD::OneScaleObjectDetection(Point& point, double Scale,
 /**
  * get the current haar-classifier's value (left/right)
  */
-double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
-                                  u32 width, u32 height)
+double TreeObjectDetection(HAAR *m, Tree& tree, double Scale, Point& point,
+                           u32 width, u32 height)
 {
+	Image &image = m->image;
 	u32 i_rect;
 	double InverseArea;
 	u32 total_x, total_x2;
@@ -194,9 +197,9 @@ double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
 	InverseArea = 1.0/(width*height);
 	
 	total_x = image(II1, x+width, y+height) + image(II1, x, y)
-			- image(II1, x+width, y) - image(II1, x, y+height);
+	        - image(II1, x+width, y) - image(II1, x, y+height);
 	total_x2 = image(II2, x+width, y+height) + image(II2, x, y)
-			- image(II2, x+width, y) - image(II2, x, y+height);
+	         - image(II2, x+width, y) - image(II2, x, y+height);
 	
 	moy = total_x * InverseArea;
 	vnorm = total_x2 * InverseArea - moy * moy;
@@ -221,7 +224,7 @@ double MSHCD::TreeObjectDetection(Tree& tree, double Scale, Point& point,
 		return tree.right_val;
 }
 
-void MSHCD::GetIntegralCanny()
+void GetIntegralCanny(Image &image)
 {
 	u32 i, j;
 	u32 sum;
@@ -288,7 +291,7 @@ void MSHCD::GetIntegralCanny()
 }
 
 /** Returns true if two rectangles overlap */
-bool equals(Rectangle& r1, Rectangle& r2)
+static bool equals(Rectangle& r1, Rectangle& r2)
 {
 	u32 dist_x, dist_y;
 	dist_x = (u32)(r1.width * 0.15);
@@ -310,7 +313,7 @@ bool equals(Rectangle& r1, Rectangle& r2)
 	return false;
 }
 
-vector<Rectangle> MSHCD::merge(vector<Rectangle> objs, u32 min_neighbors)
+vector<Rectangle> MergeRects(vector<Rectangle> objs, u32 min_neighbors)
 {
 	vector<Rectangle> ret;
 	u32 i, j;
@@ -369,7 +372,7 @@ vector<Rectangle> MSHCD::merge(vector<Rectangle> objs, u32 min_neighbors)
 	return ret;
 }
 
-void MSHCD::PrintDetectionResult()
+void PrintDetectionResult(vector<Rectangle> &objects)
 {
 	FILE *fout;
 	u32 i_obj;
@@ -386,7 +389,7 @@ void MSHCD::PrintDetectionResult()
 }
 
 #ifdef WITH_OPENCV
-void MSHCD::ShowDetectionResult(const char* file)
+void ShowDetectionResult(const char* file, vector<Rectangle> &objects)
 {
 	u32 i_obj;
 	cv::Point pt1, pt2;

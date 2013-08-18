@@ -90,25 +90,27 @@ extern u32 GetHaarCascade(const char* filename, vector<Stage>& Stages);
 
 #define WITH_OPENCV
 
-typedef struct MSHCD
+typedef struct HAAR
 {
 	HaarCascade haarcascade;
 	Image image;
 	vector<Rectangle> objects;
-	explicit MSHCD(const char* imagefile, const char* haarcasadefile);
-	void GetIntergralImages(const char* imagefile);
-	void HaarCasadeObjectDetection();
-	void OneScaleObjectDetection(Point& point, double Scale,
-		                         u32 width, u32 height);
-	double TreeObjectDetection(Tree& tree, double Scale, Point& point,
-		                       u32 width, u32 height);
-	void PrintDetectionResult();
+}HAAR;
+
+void MSHCD(HAAR *m, const char* imagefile, const char* haarcasadefile);
+void GetIntergralImages(const char* imagefile, Image &image);
+void GetIntegralCanny(Image &image);
+void HaarCasadeObjectDetection(HAAR *m);
+void OneScaleObjectDetection(HAAR *m, Point& point, double Scale,
+                             u32 width, u32 height);
+double TreeObjectDetection(HAAR *m, Tree& tree, double Scale, Point& point,
+		                   u32 width, u32 height);
+vector<Rectangle> MergeRects(vector<Rectangle> objs, u32 min_neighbors);
+
+void PrintDetectionResult(vector<Rectangle> &objects);
 #ifdef WITH_OPENCV
-	void ShowDetectionResult(const char* file);
+void ShowDetectionResult(const char* file, vector<Rectangle> &objects);
 #endif
-	vector<Rectangle> merge(vector<Rectangle> objs, u32 min_neighbors);
-	void GetIntegralCanny();
-}MSHCD;
 
 #endif
 
