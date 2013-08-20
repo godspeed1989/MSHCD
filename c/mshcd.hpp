@@ -16,6 +16,9 @@ typedef unsigned short          u16;
 typedef unsigned int            u32;
 typedef unsigned long long      u64;
 
+#define MAX_STAGES              50
+#define MAX_TREES_PER_STAGE     800
+
 typedef struct Rectangle
 {
 	u32 x, y;
@@ -33,13 +36,15 @@ typedef struct Tree
 typedef struct Stage
 {
 	double threshold;
-	vector<Tree> trees;
+	Tree **trees;
+	u32 n_trees;
 }Stage;
 typedef struct HaarCascade
 {
 	u32 size1, size2;
 	double ScaleUpdate;
-	vector<Stage> stages;
+	Stage **stages;
+	u32 n_stages;
 }HaarCascade;
 
 #define II1    1
@@ -71,12 +76,6 @@ typedef struct Image
 	}
 }Image;
 
-typedef struct Point
-{
-	u32 x, y;
-	Point(u32 _x=0, u32 _y=0):x(_x), y(_y){}
-}Point;
-
 #define PRINT_FUNCTION_INFO() printf("------%s()\n", __FUNCTION__)
 #define PRINT_FUNCTION_END_INFO() printf("%s()------\n", __FUNCTION__)
 //#define DEBUG
@@ -86,7 +85,7 @@ typedef struct Point
 #define DPRINTF(args...)
 #endif
 
-extern u32 GetHaarCascade(const char* filename, vector<Stage>& Stages);
+extern void GetHaarCascade(const char* filename, HaarCascade* haarcascade);
 
 #define WITH_OPENCV
 
@@ -98,19 +97,22 @@ typedef struct HAAR
 }HAAR;
 
 void MSHCD(HAAR *m, const char* imagefile, const char* haarcasadefile);
+
 void GetIntergralImages(const char* imagefile, Image &image);
 void GetIntegralCanny(Image &image);
+
 void HaarCasadeObjectDetection(HAAR *m);
-void OneScaleObjectDetection(HAAR *m, Point& point, double Scale,
-                             u32 width, u32 height);
-double TreeObjectDetection(HAAR *m, Tree& tree, double Scale, Point& point,
-		                   u32 width, u32 height);
+void OneScaleObjectDetection(HAAR *m, Rectangle *rect, double Scale);
+double TreeObjectDetection(HAAR *m, Tree* tree, Rectangle *rect, double Scale);
+
 vector<Rectangle> MergeRects(vector<Rectangle> objs, u32 min_neighbors);
 
 void PrintDetectionResult(vector<Rectangle> &objects);
 #ifdef WITH_OPENCV
 void ShowDetectionResult(const char* file, vector<Rectangle> &objects);
 #endif
+
+void MSHCD_Cleanup(HAAR *m);
 
 #endif
 

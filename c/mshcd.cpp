@@ -9,14 +9,33 @@ void MSHCD(HAAR *m, const char* imagefile, const char* haarcasadefile)
 	assert(sizeof(u16) == 2);
 	assert(sizeof(u32) == 4);
 	assert(sizeof(u64) == 8);
-	m->haarcascade.ScaleUpdate = 1.0/1.14;
-	m->haarcascade.size1 = m->haarcascade.size2 = \
-	GetHaarCascade(haarcasadefile, m->haarcascade.stages); // get classifer from file
-	GetIntergralImages(imagefile, m->image);               // calculate integral image
-	GetIntegralCanny(m->image);                            // calculate integral canny image
-	HaarCasadeObjectDetection(m);                          // start detection
-	m->objects = MergeRects(m->objects, 1);                // merge found results
-	PrintDetectionResult(m->objects);                      // show detection result
+	m->haarcascade.ScaleUpdate = 1.0/1.3;
+	GetHaarCascade(haarcasadefile, &m->haarcascade);    // get classifer from file
+	GetIntergralImages(imagefile, m->image);            // calculate integral image
+	GetIntegralCanny(m->image);                         // calculate integral canny image
+	HaarCasadeObjectDetection(m);                       // start detection
+	m->objects = MergeRects(m->objects, 1);             // merge found results
+	PrintDetectionResult(m->objects);                   // show detection result
+	MSHCD_Cleanup(m);
+}
+
+/**
+ * Clean up function
+ */
+void MSHCD_Cleanup(HAAR *m)
+{
+	u32 i, j;
+	for(i = 0; i < m->haarcascade.n_stages; ++i)
+	{
+		Stage *stage = m->haarcascade.stages[i];
+		for(j = 0; j < stage->n_trees; ++j)
+		{
+			free(stage->trees[j]);
+		}
+		free(stage->trees);
+		free(stage);
+	}
+	free(m->haarcascade.stages);
 }
 
 /**
@@ -53,11 +72,11 @@ void GetIntergralImages(const char* imagefile, Image &image)
 	memset(image.idata1, 0, size*sizeof(u32));
 	image.idata2 = (u32*)malloc(size*sizeof(u32));
 	memset(image.idata2, 0, size*sizeof(u32));
-	for(i=0; i<image.width; i++)
+	for(i = 0; i < image.width; i++)
 	{
 		u32 col = 0.0;
 		u32 col2 = 0.0;
-		for(j=0; j<image.height; j++)
+		for(j = 0; j < image.height; j++)
 		{
 			u32 idx = j*image.width + i;
 			u8 value = *(image.data + idx);	
@@ -72,10 +91,10 @@ void GetIntergralImages(const char* imagefile, Image &image)
 			*(image.idata2 + idx) += col2;
 		}
 	}
-	/*for(i=0; i<10; i++)
+	/*for(i = 0; i < 10; i++)
 	{
-		for(j=0; j<10; j++)
-			printf("%d ", (int)*(image.data+j*image.width+i));
+		for(j = 0; j < 10; j++)
+			printf("%d ", (int)*(image.data + j*image.width + i));
 		printf("\n");
 	}*/
 	PRINT_FUNCTION_END_INFO();
@@ -92,31 +111,31 @@ void HaarCasadeObjectDetection(HAAR *m)
 	u32 i, itt, x, y, width, height, step;
 	PRINT_FUNCTION_INFO();
 	// get start scale
-	ScaleWidth = image.width/haarcascade.size1;
-	ScaleHeight = image.height/haarcascade.size2;
+	ScaleWidth = image.width / haarcascade.size1;
+	ScaleHeight = image.height / haarcascade.size2;
 	if(ScaleHeight < ScaleWidth)
 		StartScale = ScaleHeight; 
 	else
 		StartScale = ScaleWidth;
 	printf("StartScale = %lf\n", StartScale);
-	itt = (u32)ceil(log(1.0/StartScale)/log(haarcascade.ScaleUpdate));
-	printf("Total itt = %lf / %lf = %d\n", \
-			log(1.0/StartScale), log(haarcascade.ScaleUpdate), itt);
+	itt = (u32)ceil(log(1.0/StartScale) / log(haarcascade.ScaleUpdate));
+	printf("Total itt = %lf / %lf = %d\n", log(1.0/StartScale), log(haarcascade.ScaleUpdate), itt);
 	printf("Start detection.....\n");
-	for(i=0; i<itt; ++i)
+	Rectangle rect;
+	for(i = 0; i < itt; ++i)
 	{
 		printf("itt %d ", i+1);
 		Scale = StartScale * pow(haarcascade.ScaleUpdate, itt-i);
-		step = (Scale>2.0) ? (u32)Scale : 2;
+		step = (Scale > 2.0) ? (u32)Scale : 2;
 		printf("scale %lf step %d ", Scale, step);
 		width = (u32)(haarcascade.size1 * Scale);
 		height = (u32)(haarcascade.size2 * Scale);
 		printf("width %d height %d ", width, height);
 		//0:step:(IntegralImages.width-width-1)
 		//0:step:(IntegralImages.height-height-1)
-		for(x=0; x<image.width-width; x+=step)
+		for(x = 0; x < image.width-width; x += step)
 		{
-			for(y=0; y<image.height-height; y+=step)
+			for(y = 0; y < image.height-height; y += step)
 			{
 				if(1)
 				{
@@ -127,8 +146,11 @@ void HaarCasadeObjectDetection(HAAR *m)
 					if( d<20 || d>150 )
 						continue;
 				}
-				Point pnt(x,y);
-				OneScaleObjectDetection(m, pnt, Scale, width, height);
+				rect.x = x;
+				rect.y = y;
+				rect.width = width;
+				rect.height = height;
+				OneScaleObjectDetection(m, &rect, Scale);
 			}
 		}
 		printf("\n");
@@ -139,25 +161,23 @@ void HaarCasadeObjectDetection(HAAR *m)
 /**
  * detect the object at a fixed scale, fixed width, fixed height
  */
-void OneScaleObjectDetection(HAAR *m, Point& point, double Scale,
-                             u32 width, u32 height)
+void OneScaleObjectDetection(HAAR *m, Rectangle *rect, double Scale)
 {
 	HaarCascade &haarcascade = m->haarcascade;
 	u32 i_stage, i_tree;
 	u8 pass = TRUE;
 	//PRINT_FUNCTION_INFO();
-	for(i_stage=0; i_stage<haarcascade.stages.size(); i_stage++)
+	for(i_stage = 0; i_stage < haarcascade.n_stages; i_stage++)
 	{
 		DPRINTF("----Stage %d----", i_stage);
-		Stage &stage = haarcascade.stages[i_stage];
+		Stage *stage = haarcascade.stages[i_stage];
 		double StageSum =  0.0;
-		for(i_tree=0; i_tree<stage.trees.size(); i_tree++)
+		for(i_tree = 0; i_tree < stage->n_trees; i_tree++)
 		{
-			Tree &tree = stage.trees[i_tree];
 			DPRINTF("----Tree %d----\n", i_tree);
-			StageSum += TreeObjectDetection(m, tree, Scale, point, width, height);
+			StageSum += TreeObjectDetection(m, stage->trees[i_tree], rect, Scale);
 		}
-		if(StageSum > stage.threshold)
+		if(StageSum > stage->threshold)
 			continue;
 		else
 		{
@@ -167,13 +187,7 @@ void OneScaleObjectDetection(HAAR *m, Point& point, double Scale,
 	}
 	if(pass == TRUE)
 	{
-		Rectangle rect;
-		rect.x = point.x;
-		rect.y = point.y;
-		rect.width = width;
-		rect.height = height;
-		rect.weight = -1;
-		m->objects.push_back(rect);
+		m->objects.push_back(*rect);
 		printf("+");
 	}
 	//PRINT_FUNCTION_END_INFO();
@@ -182,19 +196,20 @@ void OneScaleObjectDetection(HAAR *m, Point& point, double Scale,
 /**
  * get the current haar-classifier's value (left/right)
  */
-double TreeObjectDetection(HAAR *m, Tree& tree, double Scale, Point& point,
-                           u32 width, u32 height)
+double TreeObjectDetection(HAAR *m, Tree* tree, Rectangle *rect, double Scale)
 {
 	Image &image = m->image;
 	u32 i_rect;
 	double InverseArea;
 	u32 total_x, total_x2;
 	double moy, vnorm, Rectangle_sum;
-	u32 &x = point.x;
-	u32 &y = point.y;
+	u32 x = rect->x;
+	u32 y = rect->y;
+	u32 width = rect->width;
+	u32 height = rect->height;
 	//PRINT_FUNCTION_INFO();
 	// get the variance of pixel values in the window
-	InverseArea = 1.0/(width*height);
+	InverseArea = 1.0 / (rect->width * rect->height);
 	
 	total_x = image(II1, x+width, y+height) + image(II1, x, y)
 	        - image(II1, x+width, y) - image(II1, x, y+height);
@@ -206,22 +221,22 @@ double TreeObjectDetection(HAAR *m, Tree& tree, double Scale, Point& point,
 	vnorm = (vnorm > 1.0) ? sqrt(vnorm) : 1.0;
 	// for each rectangle in the feature
 	Rectangle_sum = 0.0;
-	for(i_rect=0; i_rect<tree.nb_rects; i_rect++)
+	for(i_rect = 0; i_rect < tree->nb_rects; i_rect++)
 	{
-		Rectangle &rect = tree.rects[i_rect];
+		Rectangle *r = &tree->rects[i_rect];
 		//printf("[%d %d] %d %d\n", rect.x, rect.y, rect.width, rect.height);
-		u32 rx1 = x + (u32) (Scale * rect.x);
-		u32 rx2 = x + (u32) (Scale * (rect.x+rect.width));
-		u32 ry1 = y + (u32) (Scale * rect.y);
-		u32 ry2 = y + (u32) (Scale * (rect.y+rect.height));
-		Rectangle_sum += (image(II1, rx2, ry2) + image(II1, rx1, ry1)
-						- image(II1, rx2, ry1) - image(II1, rx1, ry2)) * rect.weight;
+		u32 rx1 = x + (u32) (Scale * (r->x));
+		u32 rx2 = x + (u32) (Scale * (r->x+r->width));
+		u32 ry1 = y + (u32) (Scale * (r->y));
+		u32 ry2 = y + (u32) (Scale * (r->y+r->height));
+		Rectangle_sum += r->weight * (image(II1, rx2, ry2) + image(II1, rx1, ry1)
+						            - image(II1, rx2, ry1) - image(II1, rx1, ry2));
 	}
 	Rectangle_sum *= InverseArea;
-	if(Rectangle_sum < tree.threshold*vnorm)
-		return tree.left_val;
+	if(Rectangle_sum < tree->threshold*vnorm)
+		return tree->left_val;
 	else
-		return tree.right_val;
+		return tree->right_val;
 }
 
 void GetIntegralCanny(Image &image)
@@ -291,24 +306,24 @@ void GetIntegralCanny(Image &image)
 }
 
 /** Returns true if two rectangles overlap */
-static bool equals(Rectangle& r1, Rectangle& r2)
+static bool equals(Rectangle* r1, Rectangle* r2)
 {
 	u32 dist_x, dist_y;
-	dist_x = (u32)(r1.width * 0.15);
-	dist_y = (u32)(r1.height * 0.15);
+	dist_x = (u32)(r1->width * 0.15);
+	dist_y = (u32)(r1->height * 0.15);
 	/* y - distance <= x <= y + distance */
-	if(	r2.x <= r1.x + dist_x &&
-		r2.x >= r1.x - dist_x &&
-		r2.y <= r1.y + dist_y &&
-		r2.y >= r1.y - dist_y &&
-		(r2.width <= r1.width + dist_x || r2.width >= r1.width - dist_x) && 
-		(r2.height <= r1.height + dist_y || r2.height >= r1.height - dist_y) )
+	if(	r2->x <= r1->x + dist_x &&
+		r2->x >= r1->x - dist_x &&
+		r2->y <= r1->y + dist_y &&
+		r2->y >= r1->y - dist_y &&
+		(r2->width <= r1->width + dist_x || r2->width >= r1->width - dist_x) && 
+		(r2->height <= r1->height + dist_y || r2->height >= r1->height - dist_y) )
 		return true;
-	if(	r1.x>=r2.x && r1.x+r1.width<=r2.x+r2.width &&
-		r1.y>=r2.y && r1.y+r1.height<=r2.y+r2.height )
+	if(	r1->x>=r2->x && r1->x+r1->width<=r2->x+r2->width &&
+		r1->y>=r2->y && r1->y+r1->height<=r2->y+r2->height )
 		return true;
-	if(	r2.x>=r1.x && r2.x+r2.width<=r1.x+r1.width &&
-		r2.y>=r1.y && r2.y+r2.height<=r1.y+r1.height )
+	if(	r2->x>=r1->x && r2->x+r2->width<=r1->x+r1->width &&
+		r2->y>=r1->y && r2->y+r2->height<=r1->y+r1->height )
 		return true;
 	return false;
 }
@@ -325,7 +340,7 @@ vector<Rectangle> MergeRects(vector<Rectangle> objs, u32 min_neighbors)
 		u8 found = FALSE;
 		for(j=0; j<i; j++)
 		{
-			if(equals(objs[i], objs[j]))
+			if(equals(&objs[i], &objs[j]))
 			{
 				found = TRUE;
 				mark[i] = mark[j];
