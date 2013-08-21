@@ -1,18 +1,11 @@
 MSHCD
 =====
-The Multi-Scale Haar Cascade Detection    
-
-The Multi-Scale Haar Cascade Detection (MSHCD) is a object detection algorithm.    
-It was introduced by Viola-Jones in 2001.    
-
-Source
-======
-C implementation in `c` folder    
-CPP implementation in `cpp` folder    
+The Multi-Scale Haar Cascade Detection (MSHCD) is an object detection algorithm.    
+Introduced by Viola-Jones in 2001.    
 
 Usage for C/CPP version
 =======================
-Step 1. Generate raw grayscale image file.    
+Step 1. Generate raw gray scale image file.    
 ```
 	cd ./tools    
 	make    
@@ -22,7 +15,7 @@ Step 2. Run detection.
 ```
 	cd ./c or ./cpp    
 	make    
-	./mshcd    
+	./mshcd imagefilename cascascadefile    
 ```
 
 Haar cascade features data
@@ -35,16 +28,16 @@ File format:
 ```
 	sample-size1 sample-size2    
 	num-of-stages    
-	num-of-trees-at-stage-(i+1)    
-	i-stage i-tree 1  1  x  y  width  height  weight    
-	i-stage i-tree 1  2  x  y  width  height  weight    
-	i-stage i-tree 1  3  x  y  width  height  weight //may exist    
-	i-stage i-tree 1  0  //terminal, not used    
-	i-stage i-tree 1  tree-i-threshold    
-	i-stage i-tree 1  left_val    
-	i-stage i-tree 1  right_val    
+	num-of-trees-at-stage-(i)    
+/	i j_tree 1  1  x  y  width  height  weight    
+.	i j_tree 1  2  x  y  width  height  weight    
+.	i j_tree 1  3  x  y  width  height  weight //may exist    
+.	i j_tree 1  0  //terminal, not use    
+.	i j_tree 1  j_tree-threshold    
+.	i j_tree 1  left_val    
+\	i j_tree 1  right_val    
 	......    
-	i-stage stage_threshold    
+	$i stage_threshold    
 	num-of-trees-at-stage-(i+1)    
 	......    
 ```
