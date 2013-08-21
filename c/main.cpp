@@ -14,9 +14,7 @@ int main(int argc, const char* argv[])
 	}
 	HAAR m;
 	MSHCD(&m, argv[1], argv[2]);
-#ifdef WITH_OPENCV
-	ShowDetectionResult(argv[1], m.objects);
-#endif
+	MSHCD_Cleanup(&m);
 	return 0;
 }
 
