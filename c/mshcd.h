@@ -59,20 +59,6 @@ typedef struct Image
 	u32 *cdata;
 }Image;
 
-inline u32 I(Image *img, int type, u32 x, u32 y)
-{
-	switch(type)
-	{
-		case GRAY:  return *(img->data   + y*img->width + x);
-		case II1:   return *(img->idata1 + y*img->width + x);
-		case II2:   return *(img->idata2 + y*img->width + x);
-		case CANNY: return *(img->cdata  + y*img->width + x);
-		default:  printf("Error: Unknow Image Type!\n");
-	}
-	exit(-1);
-	return -1;
-}
-
 #define PRINT_FUNCTION_INFO() printf("------%s()\n", __FUNCTION__)
 #define PRINT_FUNCTION_END_INFO() printf("%s()------\n", __FUNCTION__)
 //#define DEBUG
@@ -84,9 +70,7 @@ inline u32 I(Image *img, int type, u32 x, u32 y)
 
 extern void GetHaarCascade(const char* filename, HaarCascade* haarcascade);
 
-#ifdef __cplusplus
- // #define WITH_OPENCV
-#endif
+//#define WITH_OPENCV
 #define DO_CANNY_PURGE
 
 typedef struct HAAR

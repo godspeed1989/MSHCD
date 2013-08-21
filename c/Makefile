@@ -1,22 +1,22 @@
 CC = gcc
-CPPFLAGS = -Wall `pkg-config --cflags opencv`
+CFLAGS = -Wall `pkg-config --cflags opencv`
 LIBS = `pkg-config --libs opencv` -lm
 
 TARGET = mshcd
 
 all: $(TARGET)
 
-$(TARGET).o: $(TARGET).cpp $(TARGET).hpp
-	$(CC) -c $<
+$(TARGET).o: $(TARGET).c $(TARGET).h
+	$(CC) -c $< $(CFLAGS)
 
-GetHaarCascade.o: GetHaarCascade.cpp
-	$(CC) -c $<
+GetHaarCascade.o: GetHaarCascade.c
+	$(CC) $(CFLAGS) -c $<
 
-main.o: main.cpp
-	$(CC) -c $<
+main.o: main.c
+	$(CC) $(CFLAGS) -c $<
 
 $(TARGET): $(TARGET).o GetHaarCascade.o main.o
-	$(CC) $+ $(LIBS) $(CPPFLAGS) -o $@
+	$(CC) $+ $(LIBS) -o $@
 
 clean:
 	rm -rf $(TARGET) *.o

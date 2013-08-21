@@ -1,7 +1,22 @@
-#include "mshcd.hpp"
+#include "mshcd.h"
 #ifdef WITH_OPENCV
-#include <opencv2/opencv.hpp>
+#include <cv.h>
+#include <highgui.h>
 #endif
+
+static inline u32 I(Image *img, int type, u32 x, u32 y)
+{
+	switch(type)
+	{
+		case GRAY:  return *(img->data   + y*img->width + x);
+		case II1:   return *(img->idata1 + y*img->width + x);
+		case II2:   return *(img->idata2 + y*img->width + x);
+		case CANNY: return *(img->cdata  + y*img->width + x);
+		default:  printf("Error: Unknow Image Type!\n");
+	}
+	exit(-1);
+	return -1;
+}
 
 void MSHCD(HAAR *m, const char* imagefile, const char* haarcasadefile)
 {
@@ -67,10 +82,10 @@ void GetIntergralImages(const char* imagefile, Image *image)
 	fread(&image->width, 4, 1, fin);
 	fread(&image->height, 4, 1, fin);
 #else
-	cv::Mat img;
-	img = cv::imread(imagefile, 0);
-	image->width = img.cols;
-	image->height = img.rows;
+	IplImage* img;
+	img = cvLoadImage(imagefile, 0);
+	image->width = img->width;
+	image->height = img->height;
 #endif
 	printf("%d X %d\n", image->width, image->height);
 	size = image->width * image->height;
@@ -79,7 +94,7 @@ void GetIntergralImages(const char* imagefile, Image *image)
 	fread(image->data, size * sizeof(u8), 1, fin);
 	fclose(fin);
 #else
-	memcpy(image->data, img.data, size * sizeof(u8));
+	memcpy(image->data, img->imageData, size * sizeof(u8));
 #endif
 	image->idata1 = (u32*)malloc(size*sizeof(u32));
 	memset(image->idata1, 0, size*sizeof(u32));
@@ -328,7 +343,7 @@ void GetIntegralCanny(Image *image)
 #endif
 
 /** Returns true if two rectangles overlap */
-static bool equals(Rectangle* r1, Rectangle* r2)
+static int equals(Rectangle* r1, Rectangle* r2)
 {
 	u32 dist_x, dist_y;
 	dist_x = (u32)(r1->width * 0.15);
@@ -340,14 +355,14 @@ static bool equals(Rectangle* r1, Rectangle* r2)
 		r2->y >= r1->y - dist_y &&
 		(r2->width <= r1->width + dist_x || r2->width >= r1->width - dist_x) && 
 		(r2->height <= r1->height + dist_y || r2->height >= r1->height - dist_y) )
-		return true;
+		return 1;
 	if(	r1->x>=r2->x && r1->x+r1->width<=r2->x+r2->width &&
 		r1->y>=r2->y && r1->y+r1->height<=r2->y+r2->height )
-		return true;
+		return 1;
 	if(	r2->x>=r1->x && r2->x+r2->width<=r1->x+r1->width &&
 		r2->y>=r1->y && r2->y+r2->height<=r1->y+r1->height )
-		return true;
-	return false;
+		return 1;
+	return 0;
 }
 
 void MergeRects(HAAR *m, u32 min_neighbors)
@@ -433,9 +448,8 @@ void PrintDetectionResult(HAAR *m)
 void ShowDetectionResult(const char* file, HAAR *m)
 {
 	u32 i_obj;
-	cv::Point pt1, pt2;
-	cv::Mat image = cv::imread(file, 1);
-	cv::Scalar scalar(255, 255, 0, 0);
+	CvPoint pt1, pt2;
+	IplImage* image = cvLoadImage(file, 1);
 	if(m->n_objects == 0)
 		return;
 	for(i_obj = 0; i_obj < m->n_objects; i_obj++)
@@ -445,11 +459,11 @@ void ShowDetectionResult(const char* file, HAAR *m)
 		pt1.y = rect->y;
 		pt2.x = pt1.x + rect->width;
 		pt2.y = pt1.y + rect->height;
-		cv::rectangle(image, pt1, pt2, scalar, 3, 8, 0);
+		cvRectangle(image, pt1, pt2, cvScalar(255, 255, 0, 0), 3, 8, 0);
 	}
-	cv::imshow("result", image);
-	cv::waitKey();
-	cv::imwrite("result.jpg", image);
+	cvShowImage("result", image);
+	cvWaitKey(0);
+	cvSaveImage("result.jpg", image, 0);
 }
 #endif
 

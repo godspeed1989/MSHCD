@@ -1,4 +1,4 @@
-#include "mshcd.hpp"
+#include "mshcd.h"
 
 /**
  * get Haar Cascade classifier from file
