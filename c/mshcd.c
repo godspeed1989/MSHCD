@@ -397,7 +397,7 @@ void MergeRects(HAAR *m, u32 min_neighbors)
 		memset(rects[i], 0, sizeof(Rectangle));
 	}
 	/* cumulate the rects of each class */
-	for(i = 0; i < nb_classes; ++i)
+	for(i = 0; i < m->n_objects; ++i)
 	{
 		neighbors[mark[i]]++;
 		rects[mark[i]]->x += m->objects[i]->x;

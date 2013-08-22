@@ -16,7 +16,7 @@ typedef unsigned long long      u64;
 
 #define MAX_STAGES              50
 #define MAX_TREES_PER_STAGE     800
-#define MAX_OBJECTS             150
+#define MAX_OBJECTS             300
 
 typedef struct Rectangle
 {
@@ -70,7 +70,7 @@ typedef struct Image
 
 extern void GetHaarCascade(const char* filename, HaarCascade* haarcascade);
 
-//#define WITH_OPENCV
+#define WITH_OPENCV
 #define DO_CANNY_PURGE
 
 typedef struct HAAR
