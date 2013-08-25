@@ -464,6 +464,7 @@ void ShowDetectionResult(const char* file, HAAR *m)
 	cvShowImage("result", image);
 	cvWaitKey(0);
 	cvSaveImage("result.jpg", image, 0);
+	cvReleaseImage(&image);
 }
 #endif
 
