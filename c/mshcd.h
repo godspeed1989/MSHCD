@@ -70,7 +70,7 @@ typedef struct Image
 
 extern void GetHaarCascade(const char* filename, HaarCascade* haarcascade);
 
-#define WITH_OPENCV
+//#define WITH_OPENCV
 #define DO_CANNY_PURGE
 
 typedef struct HAAR

@@ -1,0 +1,25 @@
+digraph "./mshcd; 1412 samples" {
+node [width=0.375,height=0.25];
+Legend [shape=box,fontsize=24,shape=plaintext,label="./mshcd\lTotal samples: 1412\lFocusing on: 1412\lDropped nodes with <= 7 abs(samples)\lDropped edges with <= 1 samples\l"];
+N1 [label="MSHCD\n0 (0.0%)\rof 1412 (100.0%)\r",shape=box,fontsize=8.0];
+N2 [label="__libc_start_main\n0 (0.0%)\rof 1412 (100.0%)\r",shape=box,fontsize=8.0];
+N3 [label="main\n0 (0.0%)\rof 1412 (100.0%)\r",shape=box,fontsize=8.0];
+N4 [label="HaarCasadeObjectDetection\n2 (0.1%)\rof 1362 (96.5%)\r",shape=box,fontsize=9.9];
+N5 [label="FixedScaleObjectDetection\n22 (1.6%)\rof 1351 (95.7%)\r",shape=box,fontsize=14.2];
+N6 [label="TreeObjectDetection\n997 (70.6%)\rof 1264 (89.5%)\r",shape=box,fontsize=50.0];
+N7 [label="I\n304 (21.5%)\r",shape=box,fontsize=31.2];
+N8 [label="sqrt\n61 (4.3%)\r",shape=box,fontsize=18.4];
+N9 [label="GetIntegralCanny\n10 (0.7%)\rof 38 (2.7%)\r",shape=box,fontsize=12.2];
+N10 [label="GetIntergralImages\n10 (0.7%)\r",shape=box,fontsize=12.2];
+N2 -> N3 [label=1412, weight=160, style="setlinewidth(2.000000)"];
+N3 -> N1 [label=1412, weight=160, style="setlinewidth(2.000000)"];
+N1 -> N4 [label=1362, weight=156, style="setlinewidth(2.000000)"];
+N4 -> N5 [label=1351, weight=155, style="setlinewidth(2.000000)"];
+N5 -> N6 [label=1264, weight=148, style="setlinewidth(2.000000)"];
+N6 -> N7 [label=267, weight=49, style="setlinewidth(1.134561)"];
+N5 -> N8 [label=61, weight=17, style="setlinewidth(0.259207)"];
+N1 -> N9 [label=38, weight=12, style="setlinewidth(0.161473)"];
+N9 -> N7 [label=28, weight=10, style="setlinewidth(0.118980)"];
+N1 -> N10 [label=10, weight=5, style="setlinewidth(0.042493)"];
+N4 -> N7 [label=9, weight=4, style="setlinewidth(0.038244)"];
+}
